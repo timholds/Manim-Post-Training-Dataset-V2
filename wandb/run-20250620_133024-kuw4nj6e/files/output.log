@@ -1,0 +1,50 @@
+2025-06-20 13:30:25,870 - INFO - Loading model: Qwen/Qwen2.5-Coder-1.5B-Instruct
+2025-06-20 13:30:25,871 - INFO - Found Unsloth version: unsloth/Qwen2.5-Coder-1.5B-Instruct-bnb-4bit
+2025-06-20 13:30:25,871 - INFO - Using Unsloth optimized model: unsloth/Qwen2.5-Coder-1.5B-Instruct-bnb-4bit
+==((====))==  Unsloth 2025.6.2: Fast Qwen2 patching. Transformers: 4.52.4.
+   \\   /|    NVIDIA RTX A4500 Laptop GPU. Num GPUs = 1. Max memory: 15.609 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.6.0+cu124. CUDA: 8.6. CUDA Toolkit: 12.4. Triton: 3.2.0
+\        /    Bfloat16 = TRUE. FA [Xformers = None. FA2 = False]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+Unsloth 2025.6.2 patched 28 layers with 28 QKV layers, 28 O layers and 28 MLP layers.
+2025-06-20 13:30:34,723 - INFO - Model and tokenizer initialized successfully
+2025-06-20 13:30:34,724 - INFO - Loading dataset from data_formatted/train.json
+2025-06-20 13:30:34,759 - INFO - Loaded 634 samples with qwen formatting
+2025-06-20 13:30:34,759 - INFO - Loading dataset from data_formatted/test.json
+2025-06-20 13:30:34,764 - INFO - Loaded 100 samples with qwen formatting
+2025-06-20 13:30:34,767 - INFO - Model has 1,562,179,072 parameters
+2025-06-20 13:30:34,772 - INFO - Trainable parameters: 18,464,768 (1.18%)
+Unsloth: Tokenizing ["text"]: 100%|██████████████████████████████████████████| 634/634 [00:00<00:00, 6291.45 examples/s]
+Unsloth: Tokenizing ["text"]: 100%|██████████████████████████████████████████| 100/100 [00:00<00:00, 7290.89 examples/s]
+2025-06-20 13:30:35,235 - INFO - Starting training from scratch...
+==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
+   \\   /|    Num examples = 634 | Num Epochs = 3 | Total steps = 120
+O^O/ \_/ \    Batch size per device = 4 | Gradient accumulation steps = 4
+\        /    Data Parallel GPUs = 1 | Total batch size (4 x 4 x 1) = 16
+ "-____-"     Trainable parameters = 18,464,768/1,500,000,000 (1.23% trained)
+[34m[1mwandb[0m: [33mWARNING[0m The `run_name` is currently set to the same value as `TrainingArguments.output_dir`. If this was not intended, please specify a different run name by setting the `TrainingArguments.run_name` parameter.
+ 42%|██████████████████████████████████▏                                               | 50/120 [02:08<02:47,  2.39s/it]Unsloth: Not an error, but Qwen2ForCausalLM does not accept `num_items_in_batch`.
+{'loss': 3.353, 'grad_norm': 2.715555191040039, 'learning_rate': 0.0, 'epoch': 0.03}
+{'loss': 2.9734, 'grad_norm': 2.770488739013672, 'learning_rate': 0.00015000000000000001, 'epoch': 0.25}
+{'loss': 1.378, 'grad_norm': 1.0311328172683716, 'learning_rate': 0.00019793406217655517, 'epoch': 0.5}
+{'loss': 0.5542, 'grad_norm': 0.6514565944671631, 'learning_rate': 0.00018802013911801112, 'epoch': 0.75}
+{'loss': 0.2718, 'grad_norm': 0.4690534770488739, 'learning_rate': 0.00017071067811865476, 'epoch': 1.0}
+{'loss': 0.1374, 'grad_norm': 0.39167577028274536, 'learning_rate': 0.00014746003697476404, 'epoch': 1.25}
+Using gradient accumulation will be very slightly less accurate.
+Read more on gradient accumulation issues here: https://unsloth.ai/blog/gradient
+100%|█████████████████████████████████████████████████████████████████████████████████| 120/120 [05:04<00:00,  2.54s/it]
+2025-06-20 13:35:40,487 - INFO - Saving LoRA adapters...                                                                
+{'eval_loss': 2.0542938709259033, 'eval_runtime': 6.3783, 'eval_samples_per_second': 15.678, 'eval_steps_per_second': 3.92, 'epoch': 1.25}
+{'loss': 0.0841, 'grad_norm': 0.30387312173843384, 'learning_rate': 0.00012022175723320381, 'epoch': 1.5}
+{'loss': 0.0628, 'grad_norm': 0.27971163392066956, 'learning_rate': 9.128442572523417e-05, 'epoch': 1.75}
+{'loss': 0.0429, 'grad_norm': 0.2814071774482727, 'learning_rate': 6.307938526873157e-05, 'epoch': 2.0}
+{'loss': 0.0266, 'grad_norm': 0.16585448384284973, 'learning_rate': 3.7976450873174005e-05, 'epoch': 2.25}
+{'loss': 0.0227, 'grad_norm': 0.20027399063110352, 'learning_rate': 1.808479557110081e-05, 'epoch': 2.5}
+{'eval_loss': 2.112816572189331, 'eval_runtime': 5.4942, 'eval_samples_per_second': 18.201, 'eval_steps_per_second': 4.55, 'epoch': 2.5}
+{'loss': 0.019, 'grad_norm': 0.1525471806526184, 'learning_rate': 5.075735642696611e-06, 'epoch': 2.75}
+{'loss': 0.0205, 'grad_norm': 0.21228240430355072, 'learning_rate': 4.230499177994007e-08, 'epoch': 3.0}
+{'train_runtime': 304.7512, 'train_samples_per_second': 6.241, 'train_steps_per_second': 0.394, 'train_loss': 0.4692905570069949, 'epoch': 3.0}
+2025-06-20 13:35:40,903 - INFO - Training completed successfully!
+2025-06-20 13:35:41,054 - INFO - Cleaning up GPU resources...
+2025-06-20 13:35:42,239 - INFO - ✓ GPU cleanup completed

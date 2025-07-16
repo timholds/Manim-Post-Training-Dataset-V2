@@ -1,0 +1,64 @@
+_wandb:
+    value:
+        cli_version: 0.20.1
+        m: []
+        python_version: 3.10.12
+        t:
+            "1":
+                - 1
+                - 11
+                - 41
+                - 49
+                - 51
+                - 71
+                - 83
+                - 84
+                - 98
+            "2":
+                - 1
+                - 11
+                - 41
+                - 49
+                - 51
+                - 71
+                - 83
+                - 84
+                - 98
+            "3":
+                - 13
+                - 15
+                - 16
+                - 55
+            "4": 3.10.12
+            "5": 0.20.1
+            "6": 4.52.4
+            "8":
+                - 2
+            "12": 0.20.1
+            "13": linux-x86_64
+batch_size:
+    value: 4
+gpu:
+    value: NVIDIA RTX A4500 Laptop GPU
+gradient_accumulation_steps:
+    value: 4
+learning_rate:
+    value: 0.0002
+lora_alpha:
+    value: 16
+lora_dropout:
+    value: 0
+lora_rank:
+    value: 16
+max_seq_length:
+    value: 2048
+model_name:
+    value: unsloth/Qwen2.5-Coder-1.5B-Instruct-bnb-4bit
+num_epochs:
+    value: 3
+optimizer:
+    value: adamw_8bit
+scheduler:
+    value: cosine
+warmup_ratio:
+    value: 0.1

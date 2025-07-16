@@ -1,0 +1,39 @@
+2025-06-19 13:20:03,495 - INFO - Loading model: unsloth/Qwen2.5-Coder-1.5B-Instruct-bnb-4bit
+==((====))==  Unsloth 2025.6.2: Fast Qwen2 patching. Transformers: 4.52.4.
+   \\   /|    NVIDIA RTX A4500 Laptop GPU. Num GPUs = 1. Max memory: 15.609 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.7.0+cu126. CUDA: 8.6. CUDA Toolkit: 12.6. Triton: 3.3.0
+\        /    Bfloat16 = TRUE. FA [Xformers = 0.0.30. FA2 = False]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+model.safetensors: 100%|███████████████████████████████████████████████████████████| 1.14G/1.14G [00:59<00:00, 19.2MB/s]
+generation_config.json: 100%|███████████████████████████████████████████████████████████| 265/265 [00:00<00:00, 292kB/s]
+tokenizer_config.json: 100%|███████████████████████████████████████████████████████| 7.51k/7.51k [00:00<00:00, 4.42MB/s]
+vocab.json: 100%|██████████████████████████████████████████████████████████████████| 2.78M/2.78M [00:00<00:00, 15.9MB/s]
+merges.txt: 100%|██████████████████████████████████████████████████████████████████| 1.67M/1.67M [00:00<00:00, 5.80MB/s]
+added_tokens.json: 100%|████████████████████████████████████████████████████████████████| 632/632 [00:00<00:00, 744kB/s]
+special_tokens_map.json: 100%|██████████████████████████████████████████████████████████| 613/613 [00:00<00:00, 762kB/s]
+tokenizer.json: 100%|██████████████████████████████████████████████████████████████| 7.03M/7.03M [00:00<00:00, 13.2MB/s]
+Unsloth 2025.6.2 patched 28 layers with 28 QKV layers, 28 O layers and 28 MLP layers.
+2025-06-19 13:21:16,200 - INFO - Model and tokenizer initialized successfully
+2025-06-19 13:21:16,201 - INFO - Loading dataset from data_formatted/train.json
+2025-06-19 13:21:16,219 - INFO - Loaded 634 samples
+2025-06-19 13:21:16,220 - INFO - Loading dataset from data_formatted/test.json
+2025-06-19 13:21:16,224 - INFO - Loaded 100 samples
+2025-06-19 13:21:16,228 - INFO - Model has 1,562,179,072 parameters
+2025-06-19 13:21:16,234 - INFO - Trainable parameters: 18,464,768 (1.18%)
+Traceback (most recent call last):
+  File "/home/timholds/code/manim-post-training/fine_tune_qwen.py", line 449, in <module>
+    train_model()
+  File "/home/timholds/code/manim-post-training/fine_tune_qwen.py", line 295, in train_model
+    training_args = create_training_arguments(str(output_dir))
+  File "/home/timholds/code/manim-post-training/fine_tune_qwen.py", line 200, in create_training_arguments
+    return TrainingArguments(
+TypeError: TrainingArguments.__init__() got an unexpected keyword argument 'evaluation_strategy'
+Traceback (most recent call last):
+  File "/home/timholds/code/manim-post-training/fine_tune_qwen.py", line 449, in <module>
+    train_model()
+  File "/home/timholds/code/manim-post-training/fine_tune_qwen.py", line 295, in train_model
+    training_args = create_training_arguments(str(output_dir))
+  File "/home/timholds/code/manim-post-training/fine_tune_qwen.py", line 200, in create_training_arguments
+    return TrainingArguments(
+TypeError: TrainingArguments.__init__() got an unexpected keyword argument 'evaluation_strategy'

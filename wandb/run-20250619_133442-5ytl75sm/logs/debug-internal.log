@@ -1,0 +1,16 @@
+{"time":"2025-06-19T13:34:42.496637176-07:00","level":"INFO","msg":"stream: starting","core version":"0.20.1","symlink path":"/home/timholds/code/manim-post-training/wandb/run-20250619_133442-5ytl75sm/logs/debug-core.log"}
+{"time":"2025-06-19T13:34:42.73328973-07:00","level":"INFO","msg":"stream: created new stream","id":"5ytl75sm"}
+{"time":"2025-06-19T13:34:42.733379087-07:00","level":"INFO","msg":"stream: started","id":"5ytl75sm"}
+{"time":"2025-06-19T13:34:42.733473698-07:00","level":"INFO","msg":"writer: Do: started","stream_id":"5ytl75sm"}
+{"time":"2025-06-19T13:34:42.733492768-07:00","level":"INFO","msg":"handler: started","stream_id":"5ytl75sm"}
+{"time":"2025-06-19T13:34:42.733627945-07:00","level":"INFO","msg":"sender: started","stream_id":"5ytl75sm"}
+{"time":"2025-06-19T13:34:42.916568521-07:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-06-19T13:42:17.688331858-07:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-06-19T13:42:17.688435637-07:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-06-19T13:42:18.177481185-07:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-06-19T13:42:18.387118035-07:00","level":"INFO","msg":"handler: operation stats","stats":{}}
+{"time":"2025-06-19T13:42:18.400711101-07:00","level":"INFO","msg":"stream: closing","id":"5ytl75sm"}
+{"time":"2025-06-19T13:42:18.400743914-07:00","level":"INFO","msg":"handler: closed","stream_id":"5ytl75sm"}
+{"time":"2025-06-19T13:42:18.400759902-07:00","level":"INFO","msg":"writer: Close: closed","stream_id":"5ytl75sm"}
+{"time":"2025-06-19T13:42:18.4008043-07:00","level":"INFO","msg":"sender: closed","stream_id":"5ytl75sm"}
+{"time":"2025-06-19T13:42:18.400892946-07:00","level":"INFO","msg":"stream: closed","id":"5ytl75sm"}

@@ -1,0 +1,15 @@
+{"time":"2025-06-19T13:20:02.550616047-07:00","level":"INFO","msg":"stream: starting","core version":"0.20.1","symlink path":"/home/timholds/code/manim-post-training/wandb/run-20250619_132002-1c7hwem0/logs/debug-core.log"}
+{"time":"2025-06-19T13:20:02.787659341-07:00","level":"INFO","msg":"stream: created new stream","id":"1c7hwem0"}
+{"time":"2025-06-19T13:20:02.787731225-07:00","level":"INFO","msg":"stream: started","id":"1c7hwem0"}
+{"time":"2025-06-19T13:20:02.787766772-07:00","level":"INFO","msg":"writer: Do: started","stream_id":"1c7hwem0"}
+{"time":"2025-06-19T13:20:02.787800142-07:00","level":"INFO","msg":"handler: started","stream_id":"1c7hwem0"}
+{"time":"2025-06-19T13:20:02.787848221-07:00","level":"INFO","msg":"sender: started","stream_id":"1c7hwem0"}
+{"time":"2025-06-19T13:20:03.161003083-07:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-06-19T13:21:17.20303064-07:00","level":"INFO","msg":"stream: closing","id":"1c7hwem0"}
+{"time":"2025-06-19T13:21:17.20307491-07:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-06-19T13:21:17.203134026-07:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-06-19T13:21:17.582379343-07:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-06-19T13:21:17.766705807-07:00","level":"INFO","msg":"handler: closed","stream_id":"1c7hwem0"}
+{"time":"2025-06-19T13:21:17.766757743-07:00","level":"INFO","msg":"writer: Close: closed","stream_id":"1c7hwem0"}
+{"time":"2025-06-19T13:21:17.766790734-07:00","level":"INFO","msg":"sender: closed","stream_id":"1c7hwem0"}
+{"time":"2025-06-19T13:21:17.7668862-07:00","level":"INFO","msg":"stream: closed","id":"1c7hwem0"}
