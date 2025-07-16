@@ -16,7 +16,7 @@ import re
 from typing import Dict, Any, List, Tuple, Optional
 import logging
 
-from .constants import PLACEHOLDER_DESCRIPTION
+from ..constants import PLACEHOLDER_DESCRIPTION
 
 logger = logging.getLogger(__name__)
 

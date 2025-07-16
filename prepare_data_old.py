@@ -16,9 +16,9 @@ from tqdm import tqdm
 
 from extractors import get_registry
 from extractors.utils import create_conversation, normalize_description, augment_prompt, normalize_code, calculate_similarity
-from extractors.quality_validator import QualityValidator, QualityFilter
-from extractors.rendering_validator import RenderingValidator, BatchRenderValidator
-from extractors.code_fixer import fix_dataset_codes
+from extractors.validators.quality_validator import QualityValidator, QualityFilter
+from extractors.validators.rendering_validator import RenderingValidator, BatchRenderValidator
+from extractors.fixers.code_fixer import fix_dataset_codes
 from extractors.constants import PLACEHOLDER_DESCRIPTION
 from analyze_code_length_distribution import analyze_code_lengths
 

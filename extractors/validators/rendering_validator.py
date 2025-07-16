@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Dict, Any, Tuple, List, Optional
 import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from .code_fixer import ManimCodeFixer
+from ..fixers.code_fixer import ManimCodeFixer
 
 logger = logging.getLogger(__name__)
 

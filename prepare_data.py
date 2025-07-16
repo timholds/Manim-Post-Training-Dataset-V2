@@ -219,7 +219,7 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description="Manim dataset preparation")
-    parser.add_argument("--sources", nargs="+", required=True, 
+    parser.add_argument("--sources", nargs="+", 
                        help="Sources to process (e.g., manimbench, manimbench_v2)")
     parser.add_argument("--output-dir", default="data_formatted", help="Output directory")
     parser.add_argument("--skip-validation", action="store_true", help="Skip rendering validation")
@@ -240,6 +240,11 @@ def main():
                 print(f"  - {source_id}: {extractor.source_name}")
             except Exception as e:
                 print(f"  - {source_id}: (error loading)")
+        return
+    
+    # Require sources if not listing
+    if not args.sources:
+        parser.error("--sources is required when not using --list-sources")
         return
     
     # Run pipeline

@@ -1,7 +1,8 @@
-"""ManimBench dataset extractor."""
+"""ManimBench dataset extractor - downloads from Kaggle."""
 
 import json
 import logging
+import subprocess
 from pathlib import Path
 from typing import Iterator, Dict, Any, Optional
 
@@ -13,156 +14,138 @@ logger = logging.getLogger(__name__)
 
 @register_extractor
 class ManimBenchExtractor(BaseExtractor):
-    """Extractor for ManimBench benchmark dataset."""
+    """Extractor for ManimBench benchmark dataset from Kaggle."""
     
     source_id = "manimbench"
-    source_name = "ManimBench Dataset"
+    source_name = "ManimBench Dataset (Kaggle)"
     priority = 5  # High priority as it's a curated benchmark dataset
     
     def _validate_config(self) -> None:
         """Validate configuration."""
-        # Support multiple possible file locations
-        possible_paths = [
-            Path(self.config.get("file", "data/manimbench/manimbench.jsonl")),
-            Path(self.config.get("file", "data/manimbench.jsonl")),
-            Path(self.config.get("file", "data/data_manimbench/manimbench.jsonl"))
-        ]
-        
-        self.file_path = None
-        for path in possible_paths:
-            if path.exists():
-                self.file_path = path
-                break
-        
-        if self.file_path is None:
-            logger.warning(f"ManimBench data file not found. Tried: {[str(p) for p in possible_paths]}")
+        self.data_dir = Path(self.config.get("data_dir", "data"))
+        self.dataset_dir = self.data_dir / "manimbench"
+        self.dataset_file = self.dataset_dir / "data.json"
     
     def estimate_sample_count(self) -> Optional[int]:
         """Return estimated number of samples."""
-        # ManimBench is typically a smaller, high-quality benchmark dataset
-        return 100  # Adjust based on actual dataset size
+        # ManimBench v1 has around 100 samples
+        return 100
+    
+    def _download_dataset(self) -> bool:
+        """Download ManimBench dataset from Kaggle if needed."""
+        # Create data directory if it doesn't exist
+        self.dataset_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Check if data already exists
+        if self.dataset_file.exists():
+            logger.info(f"Dataset already exists at {self.dataset_file}")
+            return True
+            
+        try:
+            # Download using Kaggle API
+            logger.info("Downloading ManimBench dataset from Kaggle...")
+            cmd = [
+                "kaggle", "datasets", "download",
+                "-d", "ravidussilva/manim-sft",
+                "-p", str(self.dataset_dir),
+                "--unzip"
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode != 0:
+                logger.error(f"Failed to download dataset: {result.stderr}")
+                logger.info("Make sure you have Kaggle API credentials set up.")
+                logger.info("See: https://github.com/Kaggle/kaggle-api#api-credentials")
+                return False
+                
+            logger.info("Dataset downloaded successfully")
+            
+            # Find the extracted JSON file
+            json_files = list(self.dataset_dir.glob("*.json"))
+            if not json_files:
+                logger.error("No JSON file found in downloaded data")
+                return False
+                
+            # Rename to consistent name
+            json_files[0].rename(self.dataset_file)
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error downloading dataset: {e}")
+            return False
     
     def extract(self) -> Iterator[Dict[str, Any]]:
         """Extract samples from ManimBench dataset."""
-        if self.file_path is None or not self.file_path.exists():
-            logger.error(f"ManimBench data file not found")
+        # Download dataset if needed
+        if not self._download_dataset():
+            logger.error("Failed to download ManimBench dataset")
             return
-        
+            
         try:
-            with open(self.file_path, 'r', encoding='utf-8') as f:
-                for line_num, line in enumerate(f):
-                    if not line.strip():
-                        continue
-                        
-                    try:
-                        item = json.loads(line.strip())
-                        
-                        # Handle different possible formats
-                        # Format 1: Direct description and code fields
-                        if "description" in item and "code" in item:
-                            description = item["description"]
-                            code = item["code"]
-                        
-                        # Format 2: Conversation format (like other datasets)
-                        elif "conversations" in item:
-                            conversations = item.get("conversations", [])
-                            if len(conversations) >= 3:
-                                description = conversations[1].get("value", "")
-                                code = conversations[2].get("value", "")
-                            else:
-                                logger.warning(f"Line {line_num}: Invalid conversation format")
-                                continue
-                        
-                        # Format 3: Question/answer format
-                        elif "question" in item and "answer" in item:
-                            description = item["question"]
-                            code = item["answer"]
-                        
-                        # Format 4: Prompt/completion format
-                        elif "prompt" in item and "completion" in item:
-                            description = item["prompt"]
-                            code = item["completion"]
-                        
-                        else:
-                            logger.warning(f"Line {line_num}: Unknown format, skipping")
-                            continue
-                        
-                        # Clean code from markdown if needed
-                        if code.startswith("```python"):
-                            code = code.split("```python")[1].split("```")[0].strip()
-                        elif code.startswith("```"):
-                            code = code.split("```")[1].split("```")[0].strip()
-                        
-                        # Skip empty or invalid samples
-                        if not description or not code:
-                            logger.warning(f"Line {line_num}: Empty description or code")
-                            continue
-                        
-                        # Extract additional metadata if available
-                        metadata = {
-                            "source_file": str(self.file_path),
-                            "line_number": line_num
-                        }
-                        
-                        # Add any benchmark-specific metadata
-                        if "difficulty" in item:
-                            metadata["difficulty"] = item["difficulty"]
-                        if "category" in item:
-                            metadata["category"] = item["category"]
-                        if "tags" in item:
-                            metadata["tags"] = item["tags"]
-                        if "benchmark_id" in item:
-                            metadata["benchmark_id"] = item["benchmark_id"]
-                        
-                        yield {
-                            "description": description,
-                            "code": code,
-                            "metadata": metadata
-                        }
+            with open(self.dataset_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                
+            # Process each item in the dataset
+            for idx, item in enumerate(data):
+                # Extract description and code
+                description = None
+                code = None
+                
+                # Try different possible field names
+                if 'description' in item and 'code' in item:
+                    description = item['description']
+                    code = item['code']
+                elif 'prompt' in item and 'completion' in item:
+                    description = item['prompt']
+                    code = item['completion']
+                elif 'question' in item and 'answer' in item:
+                    description = item['question']
+                    code = item['answer']
+                elif 'instruction' in item and 'output' in item:
+                    description = item['instruction']
+                    code = item['output']
+                else:
+                    logger.warning(f"Item {idx}: Unknown format, keys: {list(item.keys())}")
+                    continue
+                
+                # Clean up code if it's wrapped in markdown
+                if code and '```' in code:
+                    # Extract code from markdown code blocks
+                    if '```python' in code:
+                        code = code.split('```python')[1].split('```')[0].strip()
+                    else:
+                        code = code.split('```')[1].split('```')[0].strip()
+                
+                # Validate we have both description and code
+                if not description or not code:
+                    logger.warning(f"Item {idx}: Missing description or code")
+                    continue
                     
-                    except json.JSONDecodeError as e:
-                        logger.warning(f"Line {line_num}: JSON decode error: {e}")
-                        continue
-                    except Exception as e:
-                        logger.warning(f"Line {line_num}: Error processing item: {e}")
-                        continue
-                        
+                # Basic validation that it's Manim code
+                if 'class' not in code or 'Scene' not in code:
+                    logger.warning(f"Item {idx}: Doesn't look like Manim code")
+                    continue
+                
+                # Build metadata
+                metadata = {
+                    "dataset_file": str(self.dataset_file),
+                    "item_index": idx
+                }
+                
+                # Add any additional metadata if available
+                if 'difficulty' in item:
+                    metadata['difficulty'] = item['difficulty']
+                if 'category' in item:
+                    metadata['category'] = item['category']
+                
+                yield {
+                    "description": description.strip(),
+                    "code": code.strip(),
+                    "metadata": metadata
+                }
+                    
         except Exception as e:
-            logger.error(f"Error reading file {self.file_path}: {e}")
+            logger.error(f"Error reading dataset file: {e}")
             return
-    
-    def validate_sample(self, sample: Dict[str, Any]) -> bool:
-        """
-        Validate that a sample meets quality requirements.
-        ManimBench samples should have higher quality standards.
-        """
-        # First apply base validation
-        if not super().validate_sample(sample):
-            return False
-        
-        # Additional validation for benchmark data
-        code = sample.get("code", "")
-        description = sample.get("description", "")
-        
-        # Ensure code has proper structure
-        if "class" not in code or "Scene)" not in code:
-            logger.debug(f"ManimBench sample missing Scene class definition")
-            return False
-        
-        if "def construct" not in code:
-            logger.debug(f"ManimBench sample missing construct method")
-            return False
-        
-        # Ensure description is meaningful (not just a placeholder)
-        if len(description) < 20:
-            logger.debug(f"ManimBench sample has too short description")
-            return False
-        
-        # Check for common quality issues
-        if description.lower().startswith("create a"):
-            # Ensure it's not just "Create a scene" but has more detail
-            if len(description) < 30:
-                logger.debug(f"ManimBench sample has generic description")
-                return False
-        
-        return True

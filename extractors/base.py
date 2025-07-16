@@ -96,7 +96,7 @@ class BaseExtractor(ABC):
         """Make extractor iterable for convenience."""
         # Lazy import to avoid circular dependency
         if self.enable_quality_validation and self._quality_validator is None:
-            from .quality_validator import QualityValidator
+            from .validators.quality_validator import QualityValidator
             # Use full quality config if available, otherwise use extractor config
             quality_config = self.config.get("_quality_config", self.config)
             self._quality_validator = QualityValidator(
