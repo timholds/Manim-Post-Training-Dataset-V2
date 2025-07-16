@@ -1,34 +1,38 @@
-#!/usr/bin/env python3
-"""
-Simple ManimBench dataset extractor.
-Downloads and processes the ManimBench v1 dataset from Kaggle.
-"""
+"""ManimBench dataset extractor - downloads from Kaggle."""
 
 import json
 import logging
-import os
 import subprocess
-import zipfile
 from pathlib import Path
-from typing import List, Dict, Any
-import pandas as pd
+from typing import Iterator, Dict, Any, Optional
+
+from ..base import BaseExtractor
+from ..registry import register_extractor
 
 logger = logging.getLogger(__name__)
 
 
-class ManimBenchExtractor:
-    """Simple extractor for ManimBench dataset."""
+@register_extractor
+class ManimBenchV2Extractor(BaseExtractor):
+    """Extractor for ManimBench benchmark dataset from Kaggle."""
     
-    def __init__(self, data_dir: str = "data"):
-        self.data_dir = Path(data_dir)
+    source_id = "manimbench_v2"
+    source_name = "ManimBench Dataset (Kaggle)"
+    priority = 5  # High priority as it's a curated benchmark dataset
+    
+    def _validate_config(self) -> None:
+        """Validate configuration."""
+        self.data_dir = Path(self.config.get("data_dir", "data"))
         self.dataset_dir = self.data_dir / "manimbench"
         self.dataset_file = self.dataset_dir / "data.json"
-        
-    def download_dataset(self) -> bool:
-        """
-        Download ManimBench dataset from Kaggle.
-        Requires Kaggle API credentials to be set up.
-        """
+    
+    def estimate_sample_count(self) -> Optional[int]:
+        """Return estimated number of samples."""
+        # ManimBench v1 has around 100 samples
+        return 100
+    
+    def _download_dataset(self) -> bool:
+        """Download ManimBench dataset from Kaggle if needed."""
         # Create data directory if it doesn't exist
         self.dataset_dir.mkdir(parents=True, exist_ok=True)
         
@@ -57,15 +61,14 @@ class ManimBenchExtractor:
                 
             logger.info("Dataset downloaded successfully")
             
-            # Find the extracted parquet file
-            parquet_files = list(self.dataset_dir.glob("*.parquet"))
-            if not parquet_files:
-                logger.error("No parquet file found in downloaded data")
+            # Find the extracted JSON file
+            json_files = list(self.dataset_dir.glob("*.json"))
+            if not json_files:
+                logger.error("No JSON file found in downloaded data")
                 return False
                 
-            # Store the parquet file path
-            self.parquet_file = parquet_files[0]
-            logger.info(f"Found dataset file: {self.parquet_file.name}")
+            # Rename to consistent name
+            json_files[0].rename(self.dataset_file)
             
             return True
             
@@ -73,25 +76,20 @@ class ManimBenchExtractor:
             logger.error(f"Error downloading dataset: {e}")
             return False
     
-    def extract_samples(self) -> List[Dict[str, Any]]:
-        """
-        Extract samples from the ManimBench dataset.
-        Returns a list of samples with 'description' and 'code' fields.
-        """
-        if not self.dataset_file.exists():
-            logger.error(f"Dataset file not found at {self.dataset_file}")
-            return []
+    def extract(self) -> Iterator[Dict[str, Any]]:
+        """Extract samples from ManimBench dataset."""
+        # Download dataset if needed
+        if not self._download_dataset():
+            logger.error("Failed to download ManimBench dataset")
+            return
             
         try:
-            with open(self.dataset_file, 'r') as f:
+            with open(self.dataset_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 
-            samples = []
-            
             # Process each item in the dataset
             for idx, item in enumerate(data):
                 # Extract description and code
-                # The exact field names depend on the dataset format
                 description = None
                 code = None
                 
@@ -109,7 +107,7 @@ class ManimBenchExtractor:
                     description = item['instruction']
                     code = item['output']
                 else:
-                    logger.warning(f"Unknown format for item {idx}, keys: {list(item.keys())}")
+                    logger.warning(f"Item {idx}: Unknown format, keys: {list(item.keys())}")
                     continue
                 
                 # Clean up code if it's wrapped in markdown
@@ -122,56 +120,32 @@ class ManimBenchExtractor:
                 
                 # Validate we have both description and code
                 if not description or not code:
-                    logger.warning(f"Skipping item {idx}: missing description or code")
+                    logger.warning(f"Item {idx}: Missing description or code")
                     continue
                     
                 # Basic validation that it's Manim code
                 if 'class' not in code or 'Scene' not in code:
-                    logger.warning(f"Skipping item {idx}: doesn't look like Manim code")
+                    logger.warning(f"Item {idx}: Doesn't look like Manim code")
                     continue
-                    
-                sample = {
-                    'description': description.strip(),
-                    'code': code.strip(),
-                    'source': 'manimbench',
-                    'original_id': idx
+                
+                # Build metadata
+                metadata = {
+                    "dataset_file": str(self.dataset_file),
+                    "item_index": idx
                 }
                 
                 # Add any additional metadata if available
                 if 'difficulty' in item:
-                    sample['difficulty'] = item['difficulty']
+                    metadata['difficulty'] = item['difficulty']
                 if 'category' in item:
-                    sample['category'] = item['category']
-                    
-                samples.append(sample)
+                    metadata['category'] = item['category']
                 
-            logger.info(f"Extracted {len(samples)} valid samples from ManimBench")
-            return samples
-            
+                yield {
+                    "description": description.strip(),
+                    "code": code.strip(),
+                    "metadata": metadata
+                }
+                    
         except Exception as e:
             logger.error(f"Error reading dataset file: {e}")
-            return []
-
-
-def main():
-    """Test the extractor independently."""
-    logging.basicConfig(level=logging.INFO)
-    
-    extractor = ManimBenchExtractor()
-    
-    # Download dataset
-    if not extractor.download_dataset():
-        logger.error("Failed to download dataset")
-        return
-        
-    # Extract samples
-    samples = extractor.extract_samples()
-    
-    if samples:
-        logger.info(f"\nFirst sample:")
-        logger.info(f"Description: {samples[0]['description'][:100]}...")
-        logger.info(f"Code preview: {samples[0]['code'][:200]}...")
-
-
-if __name__ == "__main__":
-    main()
+            return

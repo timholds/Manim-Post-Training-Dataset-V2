@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Simple data preparation script for Manim dataset.
-Starting with just ManimBench to verify everything works correctly.
+Data preparation pipeline for Manim dataset.
+Simple and focused on extraction and rendering validation.
 """
 
 import json
@@ -10,8 +10,9 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
+from tqdm import tqdm
 
-from extractors.manimbench_simple import ManimBenchExtractor
+from extractors import get_registry
 
 # Configure logging
 logging.basicConfig(
@@ -65,152 +66,191 @@ def validate_rendering(sample: Dict[str, Any], timeout: int = 30) -> Tuple[bool,
         Path(temp_file).unlink(missing_ok=True)
 
 
-def validate_dataset(samples: List[Dict[str, Any]], 
-                    sample_size: Optional[int] = None,
-                    timeout: int = 30) -> List[Dict[str, Any]]:
+def prepare_dataset(
+    sources: Optional[List[str]] = None,
+    output_dir: str = "data_formatted",
+    validate_rendering: bool = True,
+    validation_sample_size: Optional[int] = None,
+    timeout: int = 30
+):
     """
-    Validate that samples can be rendered.
-    If sample_size is provided, only validate a random sample.
-    """
-    import random
+    Dataset preparation pipeline.
     
-    # Determine which samples to validate
-    if sample_size and sample_size < len(samples):
-        logger.info(f"Validating a random sample of {sample_size} out of {len(samples)} samples")
-        samples_to_validate = random.sample(samples, sample_size)
-    else:
-        logger.info(f"Validating all {len(samples)} samples")
-        samples_to_validate = samples
-    
-    # Validate each sample
-    valid_samples = []
-    failed_samples = []
-    
-    for i, sample in enumerate(samples_to_validate):
-        logger.info(f"Validating sample {i+1}/{len(samples_to_validate)}...")
-        
-        success, error = validate_rendering(sample, timeout=timeout)
-        
-        if success:
-            sample['rendering_validated'] = True
-            valid_samples.append(sample)
-        else:
-            logger.warning(f"Sample {sample['original_id']} failed: {error[:200]}...")
-            sample['rendering_error'] = error
-            failed_samples.append(sample)
-    
-    # Log summary
-    logger.info(f"\nValidation Summary:")
-    logger.info(f"  Total validated: {len(samples_to_validate)}")
-    logger.info(f"  Successful: {len(valid_samples)} ({len(valid_samples)/len(samples_to_validate)*100:.1f}%)")
-    logger.info(f"  Failed: {len(failed_samples)} ({len(failed_samples)/len(samples_to_validate)*100:.1f}%)")
-    
-    # If we only validated a sample, include all samples but mark which were validated
-    if sample_size and sample_size < len(samples):
-        # Create a set of validated IDs for quick lookup
-        validated_ids = {s['original_id'] for s in samples_to_validate}
-        
-        # Return all samples, marking which were validated
-        all_samples = []
-        for sample in samples:
-            if sample['original_id'] in validated_ids:
-                # Use the validated version
-                validated_sample = next(s for s in (valid_samples + failed_samples) 
-                                      if s['original_id'] == sample['original_id'])
-                all_samples.append(validated_sample)
-            else:
-                # Not validated
-                sample['rendering_validated'] = False
-                all_samples.append(sample)
-        
-        return all_samples
-    else:
-        # We validated everything, only return valid samples
-        return valid_samples
-
-
-def save_dataset(samples: List[Dict[str, Any]], output_dir: str = "data_formatted"):
-    """
-    Save the dataset in a simple JSON format.
+    Args:
+        sources: List of source IDs to process (default: all)
+        output_dir: Output directory for processed data
+        validate_rendering: Whether to validate rendering
+        validation_sample_size: Number of samples to validate (None = all)
+        timeout: Rendering timeout in seconds
     """
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     
-    # Save as JSON lines for easy streaming
-    output_file = output_path / "manimbench_validated.jsonl"
+    # Get registry and discover extractors
+    registry = get_registry()
+    registry.auto_discover()
     
+    available_sources = registry.list_sources()
+    logger.info(f"Available sources: {', '.join(available_sources)}")
+    
+    # Select sources to process
+    if sources:
+        sources_to_process = [s for s in sources if s in available_sources]
+        if len(sources_to_process) < len(sources):
+            missing = set(sources) - set(sources_to_process)
+            logger.warning(f"Sources not found: {missing}")
+    else:
+        sources_to_process = available_sources
+    
+    # Process each source
+    all_samples = []
+    source_stats = {}
+    
+    for source_id in sources_to_process:
+        logger.info(f"\n=== Processing {source_id} ===")
+        
+        try:
+            # Get extractor (disable quality validation for simplicity)
+            config = {
+                "enable_quality_validation": False  # We'll do our own validation
+            }
+            extractor = registry.get_extractor(source_id, config)
+            
+            # Extract samples
+            samples = []
+            for sample in extractor:
+                sample['source'] = source_id
+                samples.append(sample)
+            
+            logger.info(f"Extracted {len(samples)} samples from {source_id}")
+            
+            # Store stats
+            source_stats[source_id] = {
+                'extracted': len(samples),
+                'validated': 0,
+                'valid': 0,
+                'failed': 0
+            }
+            
+            all_samples.extend(samples)
+            
+        except Exception as e:
+            logger.error(f"Failed to process {source_id}: {e}")
+            continue
+    
+    logger.info(f"\nTotal samples extracted: {len(all_samples)}")
+    
+    # Rendering validation
+    if validate_rendering and all_samples:
+        logger.info(f"\n=== Rendering Validation ===")
+        
+        # Determine samples to validate
+        import random
+        if validation_sample_size and validation_sample_size < len(all_samples):
+            logger.info(f"Validating random sample of {validation_sample_size} samples")
+            samples_to_validate = random.sample(all_samples, validation_sample_size)
+        else:
+            logger.info(f"Validating all {len(all_samples)} samples")
+            samples_to_validate = all_samples
+        
+        # Validate with progress bar
+        valid_samples = []
+        failed_samples = []
+        
+        for sample in tqdm(samples_to_validate, desc="Validating"):
+            success, error = validate_rendering(sample, timeout=timeout)
+            
+            if success:
+                sample['rendering_validated'] = True
+                valid_samples.append(sample)
+                source_stats[sample['source']]['valid'] += 1
+            else:
+                sample['rendering_error'] = error
+                failed_samples.append(sample)
+                source_stats[sample['source']]['failed'] += 1
+            
+            source_stats[sample['source']]['validated'] += 1
+        
+        # Log validation summary
+        logger.info(f"\nValidation Summary:")
+        logger.info(f"  Total validated: {len(samples_to_validate)}")
+        logger.info(f"  Successful: {len(valid_samples)} ({len(valid_samples)/len(samples_to_validate)*100:.1f}%)")
+        logger.info(f"  Failed: {len(failed_samples)}")
+        
+        # Per-source breakdown
+        logger.info(f"\nPer-source validation results:")
+        for source_id, stats in source_stats.items():
+            if stats['validated'] > 0:
+                success_rate = stats['valid'] / stats['validated'] * 100
+                logger.info(f"  {source_id}: {stats['valid']}/{stats['validated']} ({success_rate:.1f}%)")
+    
+    # Save results
+    logger.info(f"\n=== Saving Results ===")
+    
+    # Save all samples (including validation results)
+    output_file = output_path / "dataset.jsonl"
     with open(output_file, 'w') as f:
-        for sample in samples:
+        for sample in all_samples:
             f.write(json.dumps(sample) + '\n')
+    logger.info(f"Saved {len(all_samples)} samples to {output_file}")
     
-    logger.info(f"Saved {len(samples)} samples to {output_file}")
-    
-    # Also save statistics
-    stats = {
-        'total_samples': len(samples),
-        'validated_samples': sum(1 for s in samples if s.get('rendering_validated', False)),
-        'failed_samples': sum(1 for s in samples if 'rendering_error' in s),
-        'source': 'manimbench'
-    }
-    
-    stats_file = output_path / "dataset_stats.json"
+    # Save statistics
+    stats_file = output_path / "stats.json"
     with open(stats_file, 'w') as f:
-        json.dump(stats, f, indent=2)
-    
+        json.dump({
+            'total_samples': len(all_samples),
+            'sources': source_stats,
+            'validation_performed': validate_rendering,
+            'validation_sample_size': validation_sample_size
+        }, f, indent=2)
     logger.info(f"Saved statistics to {stats_file}")
+    
+    # Save failed samples for debugging
+    if validate_rendering and failed_samples:
+        failed_file = output_path / "failed_samples.jsonl"
+        with open(failed_file, 'w') as f:
+            for sample in failed_samples:
+                f.write(json.dumps(sample) + '\n')
+        logger.info(f"Saved {len(failed_samples)} failed samples to {failed_file}")
 
 
 def main():
-    """Main pipeline execution."""
+    """Main entry point."""
     import argparse
     
-    parser = argparse.ArgumentParser(description="Prepare ManimBench dataset")
-    parser.add_argument("--validate-all", action="store_true", 
-                       help="Validate all samples (default: validate 10 samples)")
-    parser.add_argument("--validate-sample", type=int, default=10,
-                       help="Number of samples to validate (default: 10)")
-    parser.add_argument("--timeout", type=int, default=30,
-                       help="Timeout for rendering validation in seconds (default: 30)")
-    parser.add_argument("--output-dir", default="data_formatted",
-                       help="Output directory (default: data_formatted)")
-    parser.add_argument("--skip-validation", action="store_true",
-                       help="Skip rendering validation entirely")
-    parser.add_argument("--data-dir", default="data",
-                       help="Directory to store raw data (default: data)")
+    parser = argparse.ArgumentParser(description="Manim dataset preparation")
+    parser.add_argument("--sources", nargs="+", required=True, 
+                       help="Sources to process (e.g., manimbench, manimbench_v2)")
+    parser.add_argument("--output-dir", default="data_formatted", help="Output directory")
+    parser.add_argument("--skip-validation", action="store_true", help="Skip rendering validation")
+    parser.add_argument("--validate-sample", type=int, help="Number of samples to validate (default: all)")
+    parser.add_argument("--timeout", type=int, default=30, help="Rendering timeout in seconds")
+    parser.add_argument("--list-sources", action="store_true", help="List available sources and exit")
     
     args = parser.parse_args()
     
-    # Step 1: Extract data
-    logger.info("=== Step 1: Extracting ManimBench data ===")
-    extractor = ManimBenchExtractor(data_dir=args.data_dir)
+    # List sources if requested
+    if args.list_sources:
+        registry = get_registry()
+        registry.auto_discover()
+        print("\nAvailable sources:")
+        for source_id in sorted(registry.list_sources()):
+            try:
+                extractor = registry.get_extractor(source_id)
+                print(f"  - {source_id}: {extractor.source_name}")
+            except Exception as e:
+                print(f"  - {source_id}: (error loading)")
+        return
     
-    # Download if needed
-    if not extractor.download_dataset():
-        logger.error("Failed to download dataset. Exiting.")
-        return 1
-        
-    # Extract samples
-    samples = extractor.extract_samples()
-    
-    if not samples:
-        logger.error("No samples extracted. Exiting.")
-        return 1
-    
-    # Step 2: Validate rendering (unless skipped)
-    logger.info(f"\n=== Step 2: Rendering validation ===")
-    if not args.skip_validation:
-        sample_size = None if args.validate_all else args.validate_sample
-        samples = validate_dataset(samples, sample_size=sample_size, timeout=args.timeout)
-    else:
-        logger.info("Skipping rendering validation")
-    
-    # Step 3: Save dataset
-    logger.info(f"\n=== Step 3: Saving dataset ===")
-    save_dataset(samples, output_dir=args.output_dir)
-    
-    logger.info("\n✅ Pipeline complete!")
-    return 0
+    # Run pipeline
+    prepare_dataset(
+        sources=args.sources,
+        output_dir=args.output_dir,
+        validate_rendering=not args.skip_validation,
+        validation_sample_size=args.validate_sample,
+        timeout=args.timeout
+    )
 
 
 if __name__ == "__main__":
-    exit(main())
+    main()
