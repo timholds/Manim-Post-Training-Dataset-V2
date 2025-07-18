@@ -6,6 +6,8 @@ import subprocess
 from pathlib import Path
 from typing import Iterator, Dict, Any, Optional
 
+import pandas as pd
+
 from ..base import BaseExtractor
 from ..registry import register_extractor
 
@@ -24,7 +26,7 @@ class ManimBenchExtractor(BaseExtractor):
         """Validate configuration."""
         self.data_dir = Path(self.config.get("data_dir", "data"))
         self.dataset_dir = self.data_dir / "manimbench"
-        self.dataset_file = self.dataset_dir / "data.json"
+        self.dataset_file = self.dataset_dir / "manim_sft_dataset.parquet"
     
     def estimate_sample_count(self) -> Optional[int]:
         """Return estimated number of samples."""
@@ -61,14 +63,15 @@ class ManimBenchExtractor(BaseExtractor):
                 
             logger.info("Dataset downloaded successfully")
             
-            # Find the extracted JSON file
-            json_files = list(self.dataset_dir.glob("*.json"))
-            if not json_files:
-                logger.error("No JSON file found in downloaded data")
+            # Check if parquet file exists
+            parquet_files = list(self.dataset_dir.glob("*.parquet"))
+            if not parquet_files:
+                logger.error("No Parquet file found in downloaded data")
                 return False
                 
-            # Rename to consistent name
-            json_files[0].rename(self.dataset_file)
+            # If the file has a different name, rename to expected name
+            if parquet_files[0].name != self.dataset_file.name:
+                parquet_files[0].rename(self.dataset_file)
             
             return True
             
@@ -84,39 +87,15 @@ class ManimBenchExtractor(BaseExtractor):
             return
             
         try:
-            with open(self.dataset_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                
-            # Process each item in the dataset
-            for idx, item in enumerate(data):
-                # Extract description and code
-                description = None
-                code = None
-                
-                # Try different possible field names
-                if 'description' in item and 'code' in item:
-                    description = item['description']
-                    code = item['code']
-                elif 'prompt' in item and 'completion' in item:
-                    description = item['prompt']
-                    code = item['completion']
-                elif 'question' in item and 'answer' in item:
-                    description = item['question']
-                    code = item['answer']
-                elif 'instruction' in item and 'output' in item:
-                    description = item['instruction']
-                    code = item['output']
-                else:
-                    logger.warning(f"Item {idx}: Unknown format, keys: {list(item.keys())}")
-                    continue
-                
-                # Clean up code if it's wrapped in markdown
-                if code and '```' in code:
-                    # Extract code from markdown code blocks
-                    if '```python' in code:
-                        code = code.split('```python')[1].split('```')[0].strip()
-                    else:
-                        code = code.split('```')[1].split('```')[0].strip()
+            # Read parquet file
+            df = pd.read_parquet(self.dataset_file)
+            logger.info(f"Loaded {len(df)} samples from {self.dataset_file}")
+            
+            # Process each row in the dataframe
+            for idx, row in df.iterrows():
+                # ManimBench dataset has columns: Generated Description, Reviewed Description, Code, Type, Split
+                description = row['Reviewed Description'] or row['Generated Description']
+                code = row['Code']  # Keep code exactly as is from the dataset
                 
                 # Validate we have both description and code
                 if not description or not code:
@@ -131,18 +110,14 @@ class ManimBenchExtractor(BaseExtractor):
                 # Build metadata
                 metadata = {
                     "dataset_file": str(self.dataset_file),
-                    "item_index": idx
+                    "item_index": idx,
+                    "type": row.get('Type'),
+                    "split": row.get('Split')
                 }
-                
-                # Add any additional metadata if available
-                if 'difficulty' in item:
-                    metadata['difficulty'] = item['difficulty']
-                if 'category' in item:
-                    metadata['category'] = item['category']
                 
                 yield {
                     "description": description.strip(),
-                    "code": code.strip(),
+                    "code": code,  # Keep code exactly as is, no stripping
                     "metadata": metadata
                 }
                     

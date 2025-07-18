@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
 Data preparation pipeline for Manim dataset.
-Simple and focused on extraction and rendering validation.
+Simple and focused on extraction and video rendering.
 """
 
 import json
 import logging
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -22,9 +23,34 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def validate_rendering(sample: Dict[str, Any], timeout: int = 30) -> Tuple[bool, Optional[str]]:
+def deduplicate_samples(samples: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
     """
-    Validate that a code sample can be rendered by Manim.
+    Remove duplicate samples based on identical code.
+    Returns (deduplicated_samples, duplicate_counts_by_source).
+    """
+    seen_codes = {}
+    deduplicated = []
+    duplicate_counts = {}
+    
+    for sample in samples:
+        code = sample['code']
+        source = sample['source']
+        
+        if code not in seen_codes:
+            seen_codes[code] = sample
+            deduplicated.append(sample)
+        else:
+            # Track which source had the duplicate
+            if source not in duplicate_counts:
+                duplicate_counts[source] = 0
+            duplicate_counts[source] += 1
+    
+    return deduplicated, duplicate_counts
+
+
+def render_video(sample: Dict[str, Any], output_path: Path, timeout: int = 120) -> Tuple[bool, Optional[str]]:
+    """
+    Render a code sample as a video.
     Returns (success, error_message).
     """
     # Create a temporary file for the code
@@ -32,15 +58,26 @@ def validate_rendering(sample: Dict[str, Any], timeout: int = 30) -> Tuple[bool,
         f.write(sample['code'])
         temp_file = f.name
     
+    # Create a temporary directory for manim output
+    temp_dir = tempfile.mkdtemp()
+    
     try:
-        # Run manim to render the scene
+        # Extract scene class name from code
+        scene_match = re.search(r'class\s+(\w+)\s*\([^)]*Scene[^)]*\)', sample['code'])
+        if not scene_match:
+            return False, "Could not find Scene class in code"
+        
+        scene_name = scene_match.group(1)
+        
+        # Run manim to render the video
         cmd = [
             'manim', 
             '-ql',  # Low quality for faster rendering
             '--disable_caching',
+            '--media_dir', temp_dir,
+            '--format', 'mp4',  # Force MP4 output
             temp_file,
-            '--format', 'png',  # Just render last frame for validation
-            '--progress_bar', 'none'
+            scene_name
         ]
         
         result = subprocess.run(
@@ -52,7 +89,17 @@ def validate_rendering(sample: Dict[str, Any], timeout: int = 30) -> Tuple[bool,
         
         # Check if rendering succeeded
         if result.returncode == 0:
-            return True, None
+            # Find the rendered video or image
+            video_files = list(Path(temp_dir).glob("videos/**/*.mp4"))
+            image_files = list(Path(temp_dir).glob("images/**/*.png"))
+            
+            if video_files:
+                # Move the video to the output path
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                video_files[0].rename(output_path)
+                return True, None
+            else:
+                return False, "No video file produced"
         else:
             error_msg = result.stderr or result.stdout
             return False, error_msg
@@ -62,16 +109,20 @@ def validate_rendering(sample: Dict[str, Any], timeout: int = 30) -> Tuple[bool,
     except Exception as e:
         return False, str(e)
     finally:
-        # Clean up temp file
+        # Clean up temp files
         Path(temp_file).unlink(missing_ok=True)
+        # Clean up temp directory
+        import shutil
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def prepare_dataset(
     sources: Optional[List[str]] = None,
     output_dir: str = "data_formatted",
-    validate_rendering: bool = True,
-    validation_sample_size: Optional[int] = None,
-    timeout: int = 30
+    timeout: int = 30,
+    render_videos: bool = False,
+    no_cached_videos: bool = False,
+    no_deduplication: bool = False
 ):
     """
     Dataset preparation pipeline.
@@ -79,9 +130,10 @@ def prepare_dataset(
     Args:
         sources: List of source IDs to process (default: all)
         output_dir: Output directory for processed data
-        validate_rendering: Whether to validate rendering
-        validation_sample_size: Number of samples to validate (None = all)
         timeout: Rendering timeout in seconds
+        render_videos: Whether to render all samples as videos
+        no_cached_videos: Force re-render existing videos
+        no_deduplication: Disable deduplication of samples
     """
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
@@ -110,11 +162,8 @@ def prepare_dataset(
         logger.info(f"\n=== Processing {source_id} ===")
         
         try:
-            # Get extractor (disable quality validation for simplicity)
-            config = {
-                "enable_quality_validation": False  # We'll do our own validation
-            }
-            extractor = registry.get_extractor(source_id, config)
+            # Get extractor
+            extractor = registry.get_extractor(source_id)
             
             # Extract samples
             samples = []
@@ -126,10 +175,7 @@ def prepare_dataset(
             
             # Store stats
             source_stats[source_id] = {
-                'extracted': len(samples),
-                'validated': 0,
-                'valid': 0,
-                'failed': 0
+                'extracted': len(samples)
             }
             
             all_samples.extend(samples)
@@ -140,78 +186,175 @@ def prepare_dataset(
     
     logger.info(f"\nTotal samples extracted: {len(all_samples)}")
     
-    # Rendering validation
-    if validate_rendering and all_samples:
-        logger.info(f"\n=== Rendering Validation ===")
+    # Deduplication
+    if no_deduplication:
+        logger.info(f"\n=== Deduplication Disabled ===")
+        deduplicated_samples = all_samples
+        duplicate_counts = {}
+    else:
+        logger.info(f"\n=== Deduplicating Samples ===")
+        deduplicated_samples, duplicate_counts = deduplicate_samples(all_samples)
         
-        # Determine samples to validate
-        import random
-        if validation_sample_size and validation_sample_size < len(all_samples):
-            logger.info(f"Validating random sample of {validation_sample_size} samples")
-            samples_to_validate = random.sample(all_samples, validation_sample_size)
-        else:
-            logger.info(f"Validating all {len(all_samples)} samples")
-            samples_to_validate = all_samples
+        # Update stats with deduplication info
+        for source_id in source_stats:
+            source_stats[source_id]['duplicates_removed'] = duplicate_counts.get(source_id, 0)
         
-        # Validate with progress bar
-        valid_samples = []
-        failed_samples = []
+        total_duplicates = sum(duplicate_counts.values())
+        logger.info(f"Removed {total_duplicates} duplicates, {len(deduplicated_samples)} unique samples remain")
         
-        for sample in tqdm(samples_to_validate, desc="Validating"):
-            success, error = validate_rendering(sample, timeout=timeout)
+        if duplicate_counts:
+            for source_id, count in duplicate_counts.items():
+                logger.info(f"  {source_id}: {count} duplicates removed")
+    
+    # Video rendering and filtering
+    valid_samples = []
+    
+    if render_videos:
+        logger.info(f"\n=== Rendering Videos ===")
+        
+        # Track rendering statistics
+        for source_id in source_stats:
+            source_stats[source_id]['videos_rendered'] = 0
+            source_stats[source_id]['videos_failed'] = 0
+        
+        # Process each source separately
+        for source_id in sources_to_process:
+            source_samples = [s for s in deduplicated_samples if s['source'] == source_id]
+            if not source_samples:
+                continue
+                
+            # Create output directory for this source
+            video_dir = Path("rendered_videos") / source_id
+            video_dir.mkdir(parents=True, exist_ok=True)
             
-            if success:
-                sample['rendering_validated'] = True
-                valid_samples.append(sample)
-                source_stats[sample['source']]['valid'] += 1
-            else:
-                sample['rendering_error'] = error
-                failed_samples.append(sample)
-                source_stats[sample['source']]['failed'] += 1
+            logger.info(f"\nRendering {len(source_samples)} videos for {source_id}...")
             
-            source_stats[sample['source']]['validated'] += 1
-        
-        # Log validation summary
-        logger.info(f"\nValidation Summary:")
-        logger.info(f"  Total validated: {len(samples_to_validate)}")
-        logger.info(f"  Successful: {len(valid_samples)} ({len(valid_samples)/len(samples_to_validate)*100:.1f}%)")
-        logger.info(f"  Failed: {len(failed_samples)}")
-        
-        # Per-source breakdown
-        logger.info(f"\nPer-source validation results:")
-        for source_id, stats in source_stats.items():
-            if stats['validated'] > 0:
-                success_rate = stats['valid'] / stats['validated'] * 100
-                logger.info(f"  {source_id}: {stats['valid']}/{stats['validated']} ({success_rate:.1f}%)")
+            # Track failed renders
+            failed_renders = []
+            
+            # Render each sample
+            for idx, sample in enumerate(tqdm(source_samples, desc=f"Rendering {source_id}")):
+                video_path = video_dir / f"{idx:04d}.mp4"
+                
+                # Skip if video exists and caching is enabled
+                if video_path.exists() and not no_cached_videos:
+                    source_stats[source_id]['videos_rendered'] += 1
+                    valid_samples.append(sample)
+                    continue
+                
+                # Render the video
+                success, error = render_video(sample, video_path, timeout=timeout * 4)  # 4x timeout for videos
+                
+                if success:
+                    source_stats[source_id]['videos_rendered'] += 1
+                    valid_samples.append(sample)
+                else:
+                    source_stats[source_id]['videos_failed'] += 1
+                    failed_renders.append({
+                        'index': idx,
+                        'description': sample.get('description', 'No description'),
+                        'error': error
+                    })
+            
+            # Log results for this source
+            total = source_stats[source_id]['videos_rendered'] + source_stats[source_id]['videos_failed']
+            if total > 0:
+                success_rate = source_stats[source_id]['videos_rendered'] / total * 100
+                logger.info(f"{source_id}: {source_stats[source_id]['videos_rendered']}/{total} videos rendered ({success_rate:.1f}%)")
+            
+            # Save failed renders log
+            if failed_renders:
+                failed_log = video_dir / "render_errors.json"
+                with open(failed_log, 'w') as f:
+                    json.dump(failed_renders, f, indent=2)
+                logger.info(f"Saved {len(failed_renders)} render errors to {failed_log}")
+    else:
+        # If not rendering videos, use deduplicated samples
+        valid_samples = deduplicated_samples
     
     # Save results
     logger.info(f"\n=== Saving Results ===")
     
-    # Save all samples (including validation results)
+    # Save valid samples only
     output_file = output_path / "dataset.jsonl"
     with open(output_file, 'w') as f:
-        for sample in all_samples:
+        for sample in valid_samples:
             f.write(json.dumps(sample) + '\n')
-    logger.info(f"Saved {len(all_samples)} samples to {output_file}")
+    logger.info(f"Saved {len(valid_samples)} valid samples to {output_file} (filtered from {len(all_samples)} total)")
     
     # Save statistics
     stats_file = output_path / "stats.json"
     with open(stats_file, 'w') as f:
         json.dump({
             'total_samples': len(all_samples),
-            'sources': source_stats,
-            'validation_performed': validate_rendering,
-            'validation_sample_size': validation_sample_size
+            'deduplicated_samples': len(deduplicated_samples),
+            'valid_samples': len(valid_samples),
+            'sources': source_stats
         }, f, indent=2)
     logger.info(f"Saved statistics to {stats_file}")
     
-    # Save failed samples for debugging
-    if validate_rendering and failed_samples:
-        failed_file = output_path / "failed_samples.jsonl"
-        with open(failed_file, 'w') as f:
-            for sample in failed_samples:
-                f.write(json.dumps(sample) + '\n')
-        logger.info(f"Saved {len(failed_samples)} failed samples to {failed_file}")
+    # Display summary table
+    print("\n" + "="*80)
+    print("DATASET PREPARATION SUMMARY")
+    print("="*80)
+    
+    # Calculate per-source data for table
+    source_data = {}
+    for source_id in sources_to_process:
+        stats = source_stats.get(source_id, {})
+        
+        # Initial count
+        initial = stats.get('extracted', 0)
+        
+        # After deduplication
+        duplicates = stats.get('duplicates_removed', 0)
+        after_dedup = initial - duplicates
+        
+        # After rendering validation
+        if render_videos:
+            rendered = stats.get('videos_rendered', 0)
+            final = rendered
+        else:
+            # If not rendering, count samples that made it through dedup
+            source_samples = [s for s in deduplicated_samples if s['source'] == source_id]
+            final = len(source_samples)
+        
+        source_data[source_id] = {
+            'initial': initial,
+            'after_dedup': after_dedup,
+            'final': final
+        }
+    
+    # Print table header
+    print(f"{'Dataset':<20} {'Initial':>15} {'Deduplication':>15} {'Rendering':>15}")
+    print("-"*80)
+    
+    # Print per-source rows
+    for source_id in sources_to_process:
+        data = source_data[source_id]
+        print(f"{source_id:<20} {data['initial']:>15,} {data['after_dedup']:>15,} {data['final']:>15,}")
+    
+    # Print total row
+    print("-"*80)
+    print(f"{'TOTAL':<20} {len(all_samples):>15,} {len(deduplicated_samples):>15,} {len(valid_samples):>15,}")
+    
+    # Print summary statistics
+    print("\nSummary:")
+    total_filtered = len(all_samples) - len(valid_samples)
+    retention_rate = (len(valid_samples) / len(all_samples) * 100) if all_samples else 0
+    print(f"  Total datapoints filtered: {total_filtered:,}")
+    print(f"  Overall retention rate: {retention_rate:.1f}%")
+    
+    if not no_deduplication:
+        total_duplicates = len(all_samples) - len(deduplicated_samples)
+        print(f"  Duplicates removed: {total_duplicates:,}")
+    
+    if render_videos:
+        total_invalid = len(deduplicated_samples) - len(valid_samples)
+        print(f"  Invalid (failed rendering): {total_invalid:,}")
+    
+    print("="*80)
+    
 
 
 def main():
@@ -222,10 +365,11 @@ def main():
     parser.add_argument("--sources", nargs="+", 
                        help="Sources to process (e.g., manimbench, manimbench_v2)")
     parser.add_argument("--output-dir", default="data_formatted", help="Output directory")
-    parser.add_argument("--skip-validation", action="store_true", help="Skip rendering validation")
-    parser.add_argument("--validate-sample", type=int, help="Number of samples to validate (default: all)")
     parser.add_argument("--timeout", type=int, default=30, help="Rendering timeout in seconds")
     parser.add_argument("--list-sources", action="store_true", help="List available sources and exit")
+    parser.add_argument("--render-videos", action="store_true", help="Render all samples as videos")
+    parser.add_argument("--no-cached-videos", action="store_true", help="Force re-render existing videos")
+    parser.add_argument("--no-deduplication", action="store_true", help="Disable deduplication of samples with identical code")
     
     args = parser.parse_args()
     
@@ -251,9 +395,10 @@ def main():
     prepare_dataset(
         sources=args.sources,
         output_dir=args.output_dir,
-        validate_rendering=not args.skip_validation,
-        validation_sample_size=args.validate_sample,
-        timeout=args.timeout
+        timeout=args.timeout,
+        render_videos=args.render_videos,
+        no_cached_videos=args.no_cached_videos,
+        no_deduplication=args.no_deduplication
     )
 
 
