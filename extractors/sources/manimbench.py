@@ -1,4 +1,4 @@
-"""ManimBench dataset extractor - downloads from Kaggle."""
+"""ManimBench dataset extractor - downloads cleaned version from Kaggle."""
 
 import json
 import logging
@@ -16,25 +16,25 @@ logger = logging.getLogger(__name__)
 
 @register_extractor
 class ManimBenchExtractor(BaseExtractor):
-    """Extractor for ManimBench benchmark dataset from Kaggle."""
+    """Extractor for ManimBench benchmark dataset from Kaggle (cleaned version)."""
     
     source_id = "manimbench"
-    source_name = "ManimBench Dataset (Kaggle)"
+    source_name = "ManimBench Dataset (Cleaned)"
     priority = 5  # High priority as it's a curated benchmark dataset
     
     def _validate_config(self) -> None:
         """Validate configuration."""
         self.data_dir = Path(self.config.get("data_dir", "data"))
         self.dataset_dir = self.data_dir / "manimbench"
-        self.dataset_file = self.dataset_dir / "manim_sft_dataset.parquet"
+        self.dataset_file = self.dataset_dir / "manim_sft_dataset_cleaned.parquet"
     
     def estimate_sample_count(self) -> Optional[int]:
         """Return estimated number of samples."""
-        # ManimBench v1 has around 100 samples
-        return 100
+        # Cleaned dataset has 412 samples (5 problematic ones removed)
+        return 412
     
     def _download_dataset(self) -> bool:
-        """Download ManimBench dataset from Kaggle if needed."""
+        """Download cleaned ManimBench dataset from Kaggle if needed."""
         # Create data directory if it doesn't exist
         self.dataset_dir.mkdir(parents=True, exist_ok=True)
         
@@ -45,10 +45,10 @@ class ManimBenchExtractor(BaseExtractor):
             
         try:
             # Download using Kaggle API
-            logger.info("Downloading ManimBench dataset from Kaggle...")
+            logger.info("Downloading cleaned ManimBench dataset from Kaggle...")
             cmd = [
                 "kaggle", "datasets", "download",
-                "-d", "ravidussilva/manim-sft",
+                "-d", "timholdsworth/manim-bench-cleaned",
                 "-p", str(self.dataset_dir),
                 "--unzip"
             ]
@@ -63,15 +63,16 @@ class ManimBenchExtractor(BaseExtractor):
                 
             logger.info("Dataset downloaded successfully")
             
+            # The downloaded file should be manim_sft_dataset_cleaned_final.parquet
+            # Rename it to our expected name
+            downloaded_file = self.dataset_dir / "manim_sft_dataset_cleaned_final.parquet"
+            if downloaded_file.exists() and downloaded_file != self.dataset_file:
+                downloaded_file.rename(self.dataset_file)
+            
             # Check if parquet file exists
-            parquet_files = list(self.dataset_dir.glob("*.parquet"))
-            if not parquet_files:
-                logger.error("No Parquet file found in downloaded data")
+            if not self.dataset_file.exists():
+                logger.error("Expected parquet file not found after download")
                 return False
-                
-            # If the file has a different name, rename to expected name
-            if parquet_files[0].name != self.dataset_file.name:
-                parquet_files[0].rename(self.dataset_file)
             
             return True
             
@@ -80,7 +81,7 @@ class ManimBenchExtractor(BaseExtractor):
             return False
     
     def extract(self) -> Iterator[Dict[str, Any]]:
-        """Extract samples from ManimBench dataset."""
+        """Extract samples from cleaned ManimBench dataset."""
         # Download dataset if needed
         if not self._download_dataset():
             logger.error("Failed to download ManimBench dataset")
@@ -89,7 +90,7 @@ class ManimBenchExtractor(BaseExtractor):
         try:
             # Read parquet file
             df = pd.read_parquet(self.dataset_file)
-            logger.info(f"Loaded {len(df)} samples from {self.dataset_file}")
+            logger.info(f"Loaded {len(df)} samples from cleaned ManimBench dataset")
             
             # Process each row in the dataframe
             for idx, row in df.iterrows():
