@@ -14,6 +14,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from tqdm import tqdm
 
 from extractors import get_registry
+from extractors.utils import normalize_code
 
 # Configure logging
 logging.basicConfig(
@@ -25,10 +26,11 @@ logger = logging.getLogger(__name__)
 
 def deduplicate_samples(samples: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
     """
-    Remove duplicate samples based on identical code.
+    Remove duplicate samples based on normalized code comparison.
+    Uses normalize_code to ignore formatting differences while preserving original code.
     Returns (deduplicated_samples, duplicate_counts_by_source).
     """
-    seen_codes = {}
+    seen_normalized = {}  # Maps normalized code -> first sample
     deduplicated = []
     duplicate_counts = {}
     
@@ -36,9 +38,12 @@ def deduplicate_samples(samples: List[Dict[str, Any]]) -> Tuple[List[Dict[str, A
         code = sample['code']
         source = sample['source']
         
-        if code not in seen_codes:
-            seen_codes[code] = sample
-            deduplicated.append(sample)
+        # Normalize code for comparison only
+        normalized = normalize_code(code)
+        
+        if normalized not in seen_normalized:
+            seen_normalized[normalized] = sample
+            deduplicated.append(sample)  # Keep original code
         else:
             # Track which source had the duplicate
             if source not in duplicate_counts:
@@ -98,8 +103,14 @@ def render_video(sample: Dict[str, Any], output_path: Path, timeout: int = 120) 
                 output_path.parent.mkdir(parents=True, exist_ok=True)
                 video_files[0].rename(output_path)
                 return True, None
+            elif image_files:
+                # For static scenes, save PNG in the same directory as videos
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                png_output = output_path.with_suffix('.png')
+                image_files[0].rename(png_output)
+                return True, None
             else:
-                return False, "No video file produced"
+                return False, "No video or image file produced"
         else:
             error_msg = result.stderr or result.stdout
             return False, error_msg
@@ -192,7 +203,7 @@ def prepare_dataset(
         deduplicated_samples = all_samples
         duplicate_counts = {}
     else:
-        logger.info(f"\n=== Deduplicating Samples ===")
+        logger.info(f"\n=== Deduplicating Samples (using normalized code comparison) ===")
         deduplicated_samples, duplicate_counts = deduplicate_samples(all_samples)
         
         # Update stats with deduplication info
@@ -216,6 +227,8 @@ def prepare_dataset(
         for source_id in source_stats:
             source_stats[source_id]['videos_rendered'] = 0
             source_stats[source_id]['videos_failed'] = 0
+            source_stats[source_id]['mp4_count'] = 0
+            source_stats[source_id]['png_count'] = 0
         
         # Process each source separately
         for source_id in sources_to_process:
@@ -236,11 +249,18 @@ def prepare_dataset(
             for idx, sample in enumerate(tqdm(source_samples, desc=f"Rendering {source_id}")):
                 video_path = video_dir / f"{idx:04d}.mp4"
                 
-                # Skip if video exists and caching is enabled
-                if video_path.exists() and not no_cached_videos:
-                    source_stats[source_id]['videos_rendered'] += 1
-                    valid_samples.append(sample)
-                    continue
+                # Skip if video/image exists and caching is enabled
+                if not no_cached_videos:
+                    if video_path.exists():
+                        source_stats[source_id]['videos_rendered'] += 1
+                        source_stats[source_id]['mp4_count'] += 1
+                        valid_samples.append(sample)
+                        continue
+                    elif video_path.with_suffix('.png').exists():
+                        source_stats[source_id]['videos_rendered'] += 1
+                        source_stats[source_id]['png_count'] += 1
+                        valid_samples.append(sample)
+                        continue
                 
                 # Render the video
                 success, error = render_video(sample, video_path, timeout=timeout * 4)  # 4x timeout for videos
@@ -248,6 +268,11 @@ def prepare_dataset(
                 if success:
                     source_stats[source_id]['videos_rendered'] += 1
                     valid_samples.append(sample)
+                    # Check if it was rendered as MP4 or PNG
+                    if video_path.exists():
+                        source_stats[source_id]['mp4_count'] += 1
+                    elif video_path.with_suffix('.png').exists():
+                        source_stats[source_id]['png_count'] += 1
                 else:
                     source_stats[source_id]['videos_failed'] += 1
                     failed_renders.append({
@@ -260,7 +285,9 @@ def prepare_dataset(
             total = source_stats[source_id]['videos_rendered'] + source_stats[source_id]['videos_failed']
             if total > 0:
                 success_rate = source_stats[source_id]['videos_rendered'] / total * 100
-                logger.info(f"{source_id}: {source_stats[source_id]['videos_rendered']}/{total} videos rendered ({success_rate:.1f}%)")
+                mp4_count = source_stats[source_id]['mp4_count']
+                png_count = source_stats[source_id]['png_count']
+                logger.info(f"{source_id}: {source_stats[source_id]['videos_rendered']}/{total} rendered ({success_rate:.1f}%) - {mp4_count} MP4, {png_count} PNG")
             
             # Save failed renders log
             if failed_renders:
@@ -326,17 +353,33 @@ def prepare_dataset(
         }
     
     # Print table header
-    print(f"{'Dataset':<20} {'Initial':>15} {'Deduplication':>15} {'Rendering':>15}")
-    print("-"*80)
+    if render_videos:
+        print(f"{'Dataset':<20} {'Initial':>12} {'After Dedup':>12} {'Rendered':>12} {'MP4':>8} {'PNG':>8}")
+        print("-"*80)
+    else:
+        print(f"{'Dataset':<20} {'Initial':>15} {'Deduplication':>15} {'Final':>15}")
+        print("-"*80)
     
     # Print per-source rows
     for source_id in sources_to_process:
         data = source_data[source_id]
-        print(f"{source_id:<20} {data['initial']:>15,} {data['after_dedup']:>15,} {data['final']:>15,}")
+        stats = source_stats.get(source_id, {})
+        
+        if render_videos:
+            mp4 = stats.get('mp4_count', 0)
+            png = stats.get('png_count', 0)
+            print(f"{source_id:<20} {data['initial']:>12,} {data['after_dedup']:>12,} {data['final']:>12,} {mp4:>8,} {png:>8,}")
+        else:
+            print(f"{source_id:<20} {data['initial']:>15,} {data['after_dedup']:>15,} {data['final']:>15,}")
     
     # Print total row
     print("-"*80)
-    print(f"{'TOTAL':<20} {len(all_samples):>15,} {len(deduplicated_samples):>15,} {len(valid_samples):>15,}")
+    if render_videos:
+        total_mp4 = sum(source_stats.get(sid, {}).get('mp4_count', 0) for sid in sources_to_process)
+        total_png = sum(source_stats.get(sid, {}).get('png_count', 0) for sid in sources_to_process)
+        print(f"{'TOTAL':<20} {len(all_samples):>12,} {len(deduplicated_samples):>12,} {len(valid_samples):>12,} {total_mp4:>8,} {total_png:>8,}")
+    else:
+        print(f"{'TOTAL':<20} {len(all_samples):>15,} {len(deduplicated_samples):>15,} {len(valid_samples):>15,}")
     
     # Print summary statistics
     print("\nSummary:")
@@ -352,6 +395,14 @@ def prepare_dataset(
     if render_videos:
         total_invalid = len(deduplicated_samples) - len(valid_samples)
         print(f"  Invalid (failed rendering): {total_invalid:,}")
+        
+        # Show MP4/PNG breakdown
+        total_mp4 = sum(source_stats.get(sid, {}).get('mp4_count', 0) for sid in sources_to_process)
+        total_png = sum(source_stats.get(sid, {}).get('png_count', 0) for sid in sources_to_process)
+        if total_mp4 + total_png > 0:
+            print(f"\nRendering Format Breakdown:")
+            print(f"  MP4 (animated): {total_mp4:,} ({total_mp4/(total_mp4+total_png)*100:.1f}%)")
+            print(f"  PNG (static): {total_png:,} ({total_png/(total_mp4+total_png)*100:.1f}%)")
     
     print("="*80)
     

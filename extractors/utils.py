@@ -212,6 +212,10 @@ def normalize_code(code: str) -> str:
     formatting to detect duplicates. The original code is always
     preserved in the dataset.
     """
+    # Handle edge cases
+    if not code:
+        return ""
+    
     lines = []
     
     for line in code.split('\n'):
@@ -278,3 +282,79 @@ def calculate_similarity(text1: str, text2: str) -> float:
     # Combine length ratio and Jaccard similarity
     # Weight Jaccard more heavily as it's more meaningful for code
     return (jaccard * 0.8 + len_ratio * 0.2)
+
+
+def add_wait_to_static_scenes(code: str) -> str:
+    """Add self.wait() to scenes that lack temporal elements to ensure video rendering.
+    
+    This function checks if the code contains any animation commands (play, wait, camera movements).
+    If not, it adds self.wait() at the end of the construct method to force video output.
+    
+    Args:
+        code: The Manim scene code to modify
+        
+    Returns:
+        The modified code with self.wait() added if needed
+    """
+    # Check if code already has temporal elements
+    temporal_patterns = [
+        r'self\.wait\s*\(',
+        r'self\.play\s*\(',
+        r'self\.begin_ambient_camera_rotation\s*\(',
+        r'self\.begin_3dillusion_camera_rotation\s*\(',
+        r'self\.move_camera\s*\(',
+        r'self\.stop_ambient_camera_rotation\s*\(',
+        r'self\.stop_3dillusion_camera_rotation\s*\(',
+    ]
+    
+    # If any temporal pattern exists, no modification needed
+    for pattern in temporal_patterns:
+        if re.search(pattern, code):
+            return code
+    
+    # Split into lines
+    lines = code.split('\n')
+    
+    # Find construct method
+    construct_start = -1
+    construct_indent = 0
+    
+    for i, line in enumerate(lines):
+        if re.match(r'\s*def\s+construct\s*\(\s*self\s*\)\s*:', line):
+            construct_start = i
+            construct_indent = len(line) - len(line.lstrip())
+            break
+    
+    if construct_start == -1:
+        # No construct method found, return original
+        return code
+    
+    # Find the last line of construct method
+    last_code_line = construct_start
+    method_indent = construct_indent + 4  # Python standard indent
+    
+    for i in range(construct_start + 1, len(lines)):
+        line = lines[i]
+        
+        # Skip empty lines
+        if not line.strip():
+            continue
+        
+        # Check indentation to see if we're still in the method
+        current_indent = len(line) - len(line.lstrip())
+        
+        # If we hit a line with same or less indentation as def, we've left the method
+        if current_indent <= construct_indent:
+            break
+        
+        # If it's properly indented code, update last_code_line
+        if current_indent >= method_indent:
+            last_code_line = i
+    
+    # Insert self.wait() after the last code line
+    wait_line = ' ' * method_indent + 'self.wait()'
+    
+    # Insert the wait line
+    lines.insert(last_code_line + 1, wait_line)
+    
+    return '\n'.join(lines)

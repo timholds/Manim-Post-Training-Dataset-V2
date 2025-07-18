@@ -9,9 +9,9 @@ This document describes the available datasets and any source-specific processin
 **Special Processing:** None required - code is stored as plain text
 
 ### Ideosyncrasies
-There's a sparesely populated generated description and full reviewed description. We use the latter
-
-There's three cases where the descriptions are identical but the code is different. We remove the duplicates and kept the ones with the simpler code.
+-Much of the code is actually for creating images, not videos. While this behavior can be overwritten with cli flags like -s or `--format=png`, the general rule of thumb is that if the scene is missing `self.wait()` or `self.play()` calls, it is likely an image scene.
+- There's a sparesely populated generated description and full reviewed description. We use the latter
+- There's three cases where the descriptions are identical but the code is different. We kept the ones with the simpler code and remove the other. 
 
 
 
