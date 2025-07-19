@@ -123,6 +123,9 @@ class ManimCommunityExtractor(BaseExtractor):
                         import_code = self._extract_imports(content)
                         full_code = f"{import_code}\n\n{class_code}"
                         
+                        # Apply LaTeX transformations to make code more portable
+                        full_code = self._transform_latex_code(full_code)
+                        
                         scenes.append((node.name, full_code))
             
         except Exception as e:
@@ -151,6 +154,50 @@ class ManimCommunityExtractor(BaseExtractor):
             import_text = "from manim import *\n" + import_text
         
         return import_text.strip()
+    
+    def _transform_latex_code(self, code: str) -> str:
+        """Transform LaTeX code to use standard packages and commands."""
+        
+        # Transform custom vector notation to standard LaTeX
+        code = re.sub(r'\\vv\{([^}]+)\}', r'\\vec{\1}', code)
+        
+        # Replace FrenchCursive with standard MathTex/Tex
+        code = re.sub(
+            r'FrenchCursive\(([^)]+)\)',
+            r'MathTex(\1)',
+            code
+        )
+        
+        # Remove custom TeX template assignments and simplify
+        # Remove lines that create custom templates
+        lines = code.split('\n')
+        filtered_lines = []
+        skip_template_block = False
+        
+        for line in lines:
+            # Skip custom template definitions
+            if 'TexTemplate(' in line or 'myTemplate =' in line:
+                skip_template_block = True
+                continue
+            elif skip_template_block and line.strip().startswith('myTemplate.'):
+                continue
+            elif skip_template_block and (line.strip() == '' or not line.startswith(' ')):
+                skip_template_block = False
+            
+            # Remove tex_template parameter from MathTex/Tex calls
+            if 'tex_template=' in line:
+                line = re.sub(r',\s*tex_template=[^,)]+', '', line)
+                line = re.sub(r'tex_template=[^,)]+,?\s*', '', line)
+            
+            if not skip_template_block:
+                filtered_lines.append(line)
+        
+        code = '\n'.join(filtered_lines)
+        
+        # Clean up any double empty lines
+        code = re.sub(r'\n\n\n+', '\n\n', code)
+        
+        return code
     
     def _extract_test_functions(self, file_path: Path) -> List[Tuple[str, str]]:
         """Extract test functions that create scenes from test files."""
@@ -191,6 +238,9 @@ class ManimCommunityExtractor(BaseExtractor):
                 full_code = full_code.replace('scene.wait(', 'self.wait(')
                 full_code = full_code.replace('scene.add(', 'self.add(')
                 full_code = full_code.replace('scene.remove(', 'self.remove(')
+                
+                # Apply LaTeX transformations
+                full_code = self._transform_latex_code(full_code)
                 
                 scenes.append((class_name, full_code))
         
@@ -337,6 +387,44 @@ class ManimCommunityExtractor(BaseExtractor):
             # Must have some Manim-specific content
             manim_indicators = ["self.play", "self.wait", "self.add", "Scene", "ThreeDScene"]
             if not any(indicator in code for indicator in manim_indicators):
+                return False
+            
+            # Filter out problematic content that won't render in standard Manim
+            
+            # Skip OpenGL-specific scenes (require OpenGL renderer)
+            opengl_indicators = [
+                "get_plane_mesh", "self.renderer.context", "opengl.py",
+                "interactive_embed", "FullScreenQuad", "Shader(", "Mesh(",
+                "self.widgets", "dpg.get_value"
+            ]
+            if any(indicator in code for indicator in opengl_indicators):
+                logger.debug(f"Skipping OpenGL scene: {sample.get('metadata', {}).get('class_name', 'Unknown')}")
+                return False
+            
+            # Skip scenes with complex custom LaTeX that can't be easily transformed
+            # Note: We now transform most LaTeX issues, so this is only for extreme cases
+            complex_latex_indicators = [
+                "TexFontTemplateLibrary",  # The scene that tries many fonts
+                "TexFontTemplateManual",   # Uses complex custom font definitions
+            ]
+            if any(indicator in code for indicator in complex_latex_indicators):
+                logger.debug(f"Skipping complex LaTeX scene: {sample.get('metadata', {}).get('class_name', 'Unknown')}")
+                return False
+            
+            # Skip test scenes with testing framework dependencies
+            test_framework_indicators = [
+                "@frames_comparison", "frames_comparison", "scene)", "__module_test__"
+            ]
+            if any(indicator in code for indicator in test_framework_indicators):
+                logger.debug(f"Skipping test framework scene: {sample.get('metadata', {}).get('class_name', 'Unknown')}")
+                return False
+            
+            # Skip scenes with external file dependencies that won't exist
+            file_dependency_indicators = [
+                'script_location / "assets"', 'Path(__file__)', "day_texture", "night_texture"
+            ]
+            if any(indicator in code for indicator in file_dependency_indicators):
+                logger.debug(f"Skipping file dependency scene: {sample.get('metadata', {}).get('class_name', 'Unknown')}")
                 return False
             
             return True
