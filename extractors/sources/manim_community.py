@@ -221,42 +221,76 @@ class ManimCommunityExtractor(BaseExtractor):
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             
-            # Find test functions with scene parameter
-            # Look for functions that take scene as parameter (ignore decorators for now)
-            pattern = r'def\s+(test_\w+)\s*\([^)]*scene[^)]*\):\s*\n((?:(?!\ndef\s).*\n)*)'
-            matches = re.findall(pattern, content, re.MULTILINE)
+            # Parse the AST to properly extract individual test functions
+            tree = ast.parse(content)
             
-            for func_name, func_body in matches:
-                # Skip if it's just a pass or too short
-                if 'pass' in func_body and len(func_body.strip()) < 20:
-                    continue
-                
-                # Convert test function to Scene class
-                class_name = self._test_name_to_class_name(func_name)
-                
-                # Extract the function body and convert to construct method
-                indented_body = '\n'.join(f"        {line}" if line.strip() else ''
-                                        for line in func_body.splitlines())
-                
-                # Build Scene class
-                class_code = f"""class {class_name}(Scene):
+            for node in ast.walk(tree):
+                if (isinstance(node, ast.FunctionDef) and 
+                    node.name.startswith('test_') and 
+                    len(node.args.args) > 0 and 
+                    any(arg.arg == 'scene' for arg in node.args.args)):
+                    
+                    # Extract just this function's body
+                    lines = content.splitlines()
+                    func_start = node.lineno - 1
+                    func_end = node.end_lineno if hasattr(node, 'end_lineno') else len(lines)
+                    
+                    # Get the function definition and body (skip decorators)
+                    func_lines = []
+                    in_function = False
+                    
+                    for i in range(func_start, min(func_end, len(lines))):
+                        line = lines[i]
+                        
+                        # Start collecting when we hit the def line (skip decorators)
+                        if line.strip().startswith('def '):
+                            in_function = True
+                            continue  # Skip the def line itself
+                        
+                        if in_function:
+                            # Stop if we hit another function or decorator
+                            if (line.strip().startswith(('@', 'def ')) and 
+                                not line.strip().startswith('        ')):
+                                break
+                            func_lines.append(line)
+                    
+                    if not func_lines:
+                        continue
+                    
+                    # Clean and dedent the function body
+                    func_body = '\n'.join(func_lines)
+                    
+                    # Remove leading whitespace consistently
+                    import textwrap
+                    func_body = textwrap.dedent(func_body).strip()
+                    
+                    # Skip if too short or just pass
+                    if len(func_body) < 20 or func_body.strip() == 'pass':
+                        continue
+                    
+                    # Convert to Scene class
+                    class_name = self._test_name_to_class_name(node.name)
+                    
+                    # Indent for construct method
+                    indented_body = '\n'.join(f"        {line}" if line.strip() else line
+                                            for line in func_body.splitlines())
+                    
+                    # Build Scene class
+                    class_code = f"""class {class_name}(Scene):
     def construct(self):
 {indented_body}"""
-                
-                # Include imports
-                import_code = self._extract_imports(content)
-                full_code = f"{import_code}\n\n{class_code}"
-                
-                # Clean up scene references
-                full_code = full_code.replace('scene.play(', 'self.play(')
-                full_code = full_code.replace('scene.wait(', 'self.wait(')
-                full_code = full_code.replace('scene.add(', 'self.add(')
-                full_code = full_code.replace('scene.remove(', 'self.remove(')
-                
-                # Apply LaTeX transformations
-                full_code = self._transform_latex_code(full_code)
-                
-                scenes.append((class_name, full_code))
+                    
+                    # Include imports (excluding test framework imports)
+                    import_code = self._extract_imports(content)
+                    full_code = f"{import_code}\n\n{class_code}"
+                    
+                    # Clean up scene references
+                    full_code = full_code.replace('scene.', 'self.')
+                    
+                    # Apply LaTeX transformations
+                    full_code = self._transform_latex_code(full_code)
+                    
+                    scenes.append((class_name, full_code))
         
         except Exception as e:
             logger.warning(f"Error extracting test functions from {file_path}: {e}")
@@ -426,9 +460,9 @@ class ManimCommunityExtractor(BaseExtractor):
                 return False
             
             # Skip test scenes with testing framework dependencies that can't be transformed
-            # Only skip the decorator itself, not scenes that might mention it
+            # These should be cleaned out by extraction, but catch any that slip through
             test_framework_indicators = [
-                "@frames_comparison", "__module_test__"
+                "__module_test__"  # Only skip if this module-level marker is still present
             ]
             if any(indicator in code for indicator in test_framework_indicators):
                 logger.debug(f"Skipping test framework scene: {sample.get('metadata', {}).get('class_name', 'Unknown')}")
