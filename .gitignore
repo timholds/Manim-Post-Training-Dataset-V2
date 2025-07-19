@@ -31,6 +31,7 @@ data_formatted/
 rendered_videos/
 reference_manim*/
 cache/
+extracted_scenes/
 
 # Manim output
 media/
