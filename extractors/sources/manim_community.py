@@ -137,6 +137,7 @@ class ManimCommunityExtractor(BaseExtractor):
         """Extract import statements from Python code."""
         lines = content.splitlines()
         imports = []
+        future_imports = []
         
         for line in lines:
             # Stop at first non-import statement (excluding comments and docstrings)
@@ -145,15 +146,28 @@ class ManimCommunityExtractor(BaseExtractor):
                 if not any(line.lstrip().startswith(imp) for imp in ['import', 'from']):
                     break
             
-            if line.strip().startswith(('import', 'from')):
-                imports.append(line)
+            if line.strip().startswith('from __future__'):
+                future_imports.append(line)
+            elif line.strip().startswith(('import', 'from')):
+                # Skip testing framework imports
+                if 'frames_comparison' not in line and 'pytest' not in line:
+                    imports.append(line)
+        
+        # Build imports with proper order: __future__ first, then manim, then others
+        all_imports = []
+        
+        # Add __future__ imports first
+        all_imports.extend(future_imports)
         
         # Always include basic manim import if not present
-        import_text = '\n'.join(imports)
-        if 'from manim import' not in import_text and 'import manim' not in import_text:
-            import_text = "from manim import *\n" + import_text
+        has_manim = any('from manim import' in imp for imp in imports)
+        if not has_manim:
+            all_imports.append("from manim import *")
         
-        return import_text.strip()
+        # Add other imports
+        all_imports.extend(imports)
+        
+        return '\n'.join(all_imports)
     
     def _transform_latex_code(self, code: str) -> str:
         """Transform LaTeX code to use standard packages and commands."""
@@ -207,10 +221,10 @@ class ManimCommunityExtractor(BaseExtractor):
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             
-            # Find test functions with scene parameter, including decorated ones
-            # This pattern matches functions with or without decorators
-            pattern = r'(?:@\w+(?:\([^)]*\))?\s*\n)?def\s+(test_\w+)\s*\([^)]*scene[^)]*\):\s*\n((?:(?!\n(?:@|def)\s).*\n)*)'
-            matches = re.findall(pattern, content, re.MULTILINE | re.DOTALL)
+            # Find test functions with scene parameter
+            # Look for functions that take scene as parameter (ignore decorators for now)
+            pattern = r'def\s+(test_\w+)\s*\([^)]*scene[^)]*\):\s*\n((?:(?!\ndef\s).*\n)*)'
+            matches = re.findall(pattern, content, re.MULTILINE)
             
             for func_name, func_body in matches:
                 # Skip if it's just a pass or too short
@@ -411,9 +425,10 @@ class ManimCommunityExtractor(BaseExtractor):
                 logger.debug(f"Skipping complex LaTeX scene: {sample.get('metadata', {}).get('class_name', 'Unknown')}")
                 return False
             
-            # Skip test scenes with testing framework dependencies
+            # Skip test scenes with testing framework dependencies that can't be transformed
+            # Only skip the decorator itself, not scenes that might mention it
             test_framework_indicators = [
-                "@frames_comparison", "frames_comparison", "scene)", "__module_test__"
+                "@frames_comparison", "__module_test__"
             ]
             if any(indicator in code for indicator in test_framework_indicators):
                 logger.debug(f"Skipping test framework scene: {sample.get('metadata', {}).get('class_name', 'Unknown')}")
