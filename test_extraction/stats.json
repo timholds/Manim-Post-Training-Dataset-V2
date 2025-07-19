@@ -1,0 +1,11 @@
+{
+  "total_samples": 44,
+  "deduplicated_samples": 44,
+  "valid_samples": 44,
+  "sources": {
+    "manim_ce_docs": {
+      "extracted": 44,
+      "duplicates_removed": 0
+    }
+  }
+}

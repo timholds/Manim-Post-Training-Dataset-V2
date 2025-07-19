@@ -1,0 +1,11 @@
+{
+  "total_samples": 35,
+  "deduplicated_samples": 35,
+  "valid_samples": 35,
+  "sources": {
+    "beethoven": {
+      "extracted": 35,
+      "duplicates_removed": 0
+    }
+  }
+}

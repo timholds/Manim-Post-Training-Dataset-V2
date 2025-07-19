@@ -1,0 +1,496 @@
+[
+  {
+    "manimbench": {
+      "description": "Set the background color to a light beige. Display a large black double-struck \"M\" shifted to the left and up. Show a green circle shifted to the left, a blue square shifted up, and a red triangle shifted to the right. Group these shapes and the \"M\" together, centering the group on the screen.",
+      "code_length": 687,
+      "code_preview": "from manim import *\n\nclass ManimCELogo(Scene):\n    def construct(self):\n        self.camera.background_color = \"#ece6e2\"\n        logo_green = \"#87c2a5\"\n        logo_blue = \"#525893\"\n        logo_red ="
+    },
+    "manim_ce": {
+      "description": "Example from Basic Concepts\u00b6: ManimCELogo",
+      "scene_name": "ManimCELogo",
+      "code_length": 687,
+      "code_preview": "from manim import *\n\nclass ManimCELogo(Scene):\n    def construct(self):\n        self.camera.background_color = \"#ece6e2\"\n        logo_green = \"#87c2a5\"\n        logo_blue = \"#525893\"\n        logo_red ="
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display two dots, one at the coordinates (-2, -1) and the other at (2, 1). Draw an orange line connecting the two dots. Add a brace below the line with the text \"Horizontal distance\" and another brace perpendicular to the line with the text \"x-x_1\".",
+      "code_length": 464,
+      "code_preview": "from manim import *\n\nclass BraceAnnotation(Scene):\n    def construct(self):\n        dot = Dot([-2, -1, 0])\n        dot2 = Dot([2, 1, 0])\n        line = Line(dot.get_center(), dot2.get_center()).set_co"
+    },
+    "manim_ce": {
+      "description": "Example from Basic Concepts\u00b6: BraceAnnotation",
+      "scene_name": "BraceAnnotation",
+      "code_length": 464,
+      "code_preview": "from manim import *\n\nclass BraceAnnotation(Scene):\n    def construct(self):\n        dot = Dot([-2, -1, 0])\n        dot2 = Dot([2, 1, 0])\n        line = Line(dot.get_center(), dot2.get_center()).set_co"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a number plane. Show a dot at the origin (0, 0) with the label \"(0, 0)\" below it. Draw an arrow from the origin to the point (2, 2) with the label \"(2, 2)\" next to the arrow's tip.",
+      "code_length": 369,
+      "code_preview": "from manim import *\n\nclass VectorArrow(Scene):\n    def construct(self):\n        dot = Dot(ORIGIN)\n        arrow = Arrow(ORIGIN, [2, 2, 0], buff=0)\n        numberplane = NumberPlane()\n        origin_te"
+    },
+    "manim_ce": {
+      "description": "Example from Basic Concepts\u00b6: VectorArrow",
+      "scene_name": "VectorArrow",
+      "code_length": 369,
+      "code_preview": "from manim import *\n\nclass VectorArrow(Scene):\n    def construct(self):\n        dot = Dot(ORIGIN)\n        arrow = Arrow(ORIGIN, [2, 2, 0], buff=0)\n        numberplane = NumberPlane()\n        origin_te"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a blue ellipse on the left and a red ellipse on the right with the text \"Boolean Operation\" above them. Fade in the group of ellipses and text. Show the green intersection of the ellipses with the label \"Intersection\" above it. Display the orange union of the ellipses with the label \"Union\" above it. Show the yellow exclusion of the ellipses with the label \"Exclusion\" above it. Display the pink difference of the ellipses with the label \"Difference\" above it.",
+      "code_length": 1652,
+      "code_preview": "from manim import *\n\nclass BooleanOperations(Scene):\n    def construct(self):\n        ellipse1 = Ellipse(\n            width=4.0, height=5.0, fill_opacity=0.5, color=BLUE, stroke_width=10\n        ).mov"
+    },
+    "manim_ce": {
+      "description": "Example from Basic Concepts\u00b6: BooleanOperations",
+      "scene_name": "BooleanOperations",
+      "code_length": 1652,
+      "code_preview": "from manim import *\n\nclass BooleanOperations(Scene):\n    def construct(self):\n        ellipse1 = Ellipse(\n            width=4.0, height=5.0, fill_opacity=0.5, color=BLUE, stroke_width=10\n        ).mov"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a dot at the origin. Draw a line from (3, 0) to (5, 0). Show a blue circle growing from its center. Transform the dot to a new position to the right. Move the dot along the path of the circle. Rotate the dot around the point (2, 0).",
+      "code_length": 521,
+      "code_preview": "from manim import *\n\nclass PointMovingOnShapes(Scene):\n    def construct(self):\n        circle = Circle(radius=1, color=BLUE)\n        dot = Dot()\n        dot2 = dot.copy().shift(RIGHT)\n        self.ad"
+    },
+    "manim_ce": {
+      "description": "Example from Animations\u00b6: PointMovingOnShapes",
+      "scene_name": "PointMovingOnShapes",
+      "code_length": 521,
+      "code_preview": "from manim import *\n\nclass PointMovingOnShapes(Scene):\n    def construct(self):\n        circle = Circle(radius=1, color=BLUE)\n        dot = Dot()\n        dot2 = dot.copy().shift(RIGHT)\n        self.ad"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a blue square. Move the square to the left. Change its fill color to orange. Scale the square down to 30% of its original size. Rotate the square by 0.4 radians.",
+      "code_length": 313,
+      "code_preview": "from manim import *\n\nclass MovingAround(Scene):\n    def construct(self):\n        square = Square(color=BLUE, fill_opacity=1)\n\n        self.play(square.animate.shift(LEFT))\n        self.play(square.ani"
+    },
+    "manim_ce": {
+      "description": "Example from Animations\u00b6: MovingAround",
+      "scene_name": "MovingAround",
+      "code_length": 313,
+      "code_preview": "from manim import *\n\nclass MovingAround(Scene):\n    def construct(self):\n        square = Square(color=BLUE, fill_opacity=1)\n\n        self.play(square.animate.shift(LEFT))\n        self.play(square.ani"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a stationary line from left to right. Show a second line rotating around a point on the left, forming an angle with the stationary line. Label the angle with the Greek letter theta (\u03b8). Animate the rotating line to change its angle, updating the angle and its label dynamically. Change the color of the theta label to red briefly.",
+      "code_length": 1491,
+      "code_preview": "from manim import *\n\nclass MovingAngle(Scene):\n    def construct(self):\n        rotation_center = LEFT\n\n        theta_tracker = ValueTracker(110)\n        line1 = Line(LEFT, RIGHT)\n        line_moving "
+    },
+    "manim_ce": {
+      "description": "Example from Animations\u00b6: MovingAngle",
+      "scene_name": "MovingAngle",
+      "code_length": 1491,
+      "code_preview": "from manim import *\n\nclass MovingAngle(Scene):\n    def construct(self):\n        rotation_center = LEFT\n\n        theta_tracker = ValueTracker(110)\n        line1 = Line(LEFT, RIGHT)\n        line_moving "
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a blue dot and a green dot arranged horizontally with a white line connecting them. Move the blue dot to the right and the green dot upwards, updating the connecting line dynamically.",
+      "code_length": 607,
+      "code_preview": "from manim import *\n\nclass MovingDots(Scene):\n    def construct(self):\n        d1,d2=Dot(color=BLUE),Dot(color=GREEN)\n        dg=VGroup(d1,d2).arrange(RIGHT,buff=1)\n        l1=Line(d1.get_center(),d2."
+    },
+    "manim_ce": {
+      "description": "Example from Animations\u00b6: MovingDots",
+      "scene_name": "MovingDots",
+      "code_length": 607,
+      "code_preview": "from manim import *\n\nclass MovingDots(Scene):\n    def construct(self):\n        d1,d2=Dot(color=BLUE),Dot(color=GREEN)\n        dg=VGroup(d1,d2).arrange(RIGHT,buff=1)\n        l1=Line(d1.get_center(),d2."
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a group of four dots, with the third dot colored red, arranged horizontally and scaled up. Show a yellow dot at the coordinates (4, 3). Move the group of dots so that the red dot aligns with the yellow dot.",
+      "code_length": 360,
+      "code_preview": "from manim import *\n\nclass MovingGroupToDestination(Scene):\n    def construct(self):\n        group = VGroup(Dot(LEFT), Dot(ORIGIN), Dot(RIGHT, color=RED), Dot(2 * RIGHT)).scale(1.4)\n        dest = Dot"
+    },
+    "manim_ce": {
+      "description": "Example from Animations\u00b6: MovingGroupToDestination",
+      "scene_name": "MovingGroupToDestination",
+      "code_length": 360,
+      "code_preview": "from manim import *\n\nclass MovingGroupToDestination(Scene):\n    def construct(self):\n        group = VGroup(Dot(LEFT), Dot(ORIGIN), Dot(RIGHT, color=RED), Dot(2 * RIGHT)).scale(1.4)\n        dest = Dot"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display the mathematical expression for the product rule of differentiation. Draw a rectangle around the term \\( f(x) \\frac{d}{dx} g(x) \\). Replace the rectangle with one around the term \\( g(x) \\frac{d}{dx} f(x) \\).",
+      "code_length": 545,
+      "code_preview": "from manim import *\n\nclass MovingFrameBox(Scene):\n    def construct(self):\n        text=MathTex(\n            \"\\\\frac{d}{dx}f(x)g(x)=\",\"f(x)\\\\frac{d}{dx}g(x)\",\"+\",\n            \"g(x)\\\\frac{d}{dx}f(x)\"\n "
+    },
+    "manim_ce": {
+      "description": "Example from Animations\u00b6: MovingFrameBox",
+      "scene_name": "MovingFrameBox",
+      "code_length": 545,
+      "code_preview": "from manim import *\n\nclass MovingFrameBox(Scene):\n    def construct(self):\n        text=MathTex(\n            \"\\\\frac{d}{dx}f(x)g(x)=\",\"f(x)\\\\frac{d}{dx}g(x)\",\"+\",\n            \"g(x)\\\\frac{d}{dx}f(x)\"\n "
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a white line from the origin to the left. Show a yellow line from the origin to the left that rotates around the origin. After 2 seconds, reverse the rotation direction of the yellow line for another 2 seconds.",
+      "code_length": 654,
+      "code_preview": "from manim import *\n\nclass RotationUpdater(Scene):\n    def construct(self):\n        def updater_forth(mobj, dt):\n            mobj.rotate_about_origin(dt)\n        def updater_back(mobj, dt):\n          "
+    },
+    "manim_ce": {
+      "description": "Example from Animations\u00b6: RotationUpdater",
+      "scene_name": "RotationUpdater",
+      "code_length": 654,
+      "code_preview": "from manim import *\n\nclass RotationUpdater(Scene):\n    def construct(self):\n        def updater_forth(mobj, dt):\n            mobj.rotate_about_origin(dt)\n        def updater_back(mobj, dt):\n          "
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a set of green axes with labels. Plot the sine function in blue and the cosine function in red. Label the sine graph with \"\\sin(x)\" and the cosine graph with \"\\cos(x)\". Draw a yellow vertical line at \\( x = 2\\pi \\) and label it.",
+      "code_length": 1223,
+      "code_preview": "from manim import *\n\nclass SinAndCosFunctionPlot(Scene):\n    def construct(self):\n        axes = Axes(\n            x_range=[-10, 10.3, 1],\n            y_range=[-1.5, 1.5, 1],\n            x_length=10,\n"
+    },
+    "manim_ce": {
+      "description": "Example from Plotting with Manim\u00b6: SinAndCosFunctionPlot",
+      "scene_name": "SinAndCosFunctionPlot",
+      "code_length": 1223,
+      "code_preview": "from manim import *\n\nclass SinAndCosFunctionPlot(Scene):\n    def construct(self):\n        axes = Axes(\n            x_range=[-10, 10.3, 1],\n            y_range=[-1.5, 1.5, 1],\n            x_length=10,\n"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a set of axes with labels \"x\" and \"f(x)\". Plot the function \\( f(x) = 2(x - 5)^2 \\) in maroon. Show a dot on the graph that moves to the minimum point of the function.",
+      "code_length": 818,
+      "code_preview": "from manim import *\n\nclass ArgMinExample(Scene):\n    def construct(self):\n        ax = Axes(\n            x_range=[0, 10], y_range=[0, 100, 10], axis_config={\"include_tip\": False}\n        )\n        lab"
+    },
+    "manim_ce": {
+      "description": "Example from Plotting with Manim\u00b6: ArgMinExample",
+      "scene_name": "ArgMinExample",
+      "code_length": 818,
+      "code_preview": "from manim import *\n\nclass ArgMinExample(Scene):\n    def construct(self):\n        ax = Axes(\n            x_range=[0, 10], y_range=[0, 100, 10], axis_config={\"include_tip\": False}\n        )\n        lab"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a set of axes with labels. Plot two curves: one in blue and the other in green. Draw yellow vertical lines at \\( x = 2 \\) and \\( x = 3 \\) on the blue curve. Show a blue Riemann rectangle area between \\( x = 0.3 \\) and \\( x = 0.6 \\) on the blue curve. Display a grey shaded area between the green and blue curves from \\( x = 2 \\) to \\( x = 3 \\).",
+      "code_length": 959,
+      "code_preview": "from manim import *\n\nclass GraphAreaPlot(Scene):\n    def construct(self):\n        ax = Axes(\n            x_range=[0, 5],\n            y_range=[0, 6],\n            x_axis_config={\"numbers_to_include\": [2"
+    },
+    "manim_ce": {
+      "description": "Example from Plotting with Manim\u00b6: GraphAreaPlot",
+      "scene_name": "GraphAreaPlot",
+      "code_length": 959,
+      "code_preview": "from manim import *\n\nclass GraphAreaPlot(Scene):\n    def construct(self):\n        ax = Axes(\n            x_range=[0, 5],\n            y_range=[0, 6],\n            x_axis_config={\"numbers_to_include\": [2"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a set of axes. Plot the graph of the function \\( f(x) = \\frac{k}{x} \\) in yellow. Show a blue rectangle with yellow edges that dynamically updates its size based on the value of \\( t \\). Display a dot that moves along the graph, updating its position as \\( t \\) changes.",
+      "code_length": 1560,
+      "code_preview": "from manim import *\n\nclass PolygonOnAxes(Scene):\n    def get_rectangle_corners(self, bottom_left, top_right):\n        return [\n            (top_right[0], top_right[1]),\n            (bottom_left[0], to"
+    },
+    "manim_ce": {
+      "description": "Example from Plotting with Manim\u00b6: PolygonOnAxes",
+      "scene_name": "PolygonOnAxes",
+      "code_length": 1560,
+      "code_preview": "from manim import *\n\nclass PolygonOnAxes(Scene):\n    def get_rectangle_corners(self, bottom_left, top_right):\n        return [\n            (top_right[0], top_right[1]),\n            (bottom_left[0], to"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a set of axes with labels \\(\\Delta Q\\) for the x-axis and \\(T[^\\circ C]\\) for the y-axis. Plot a line graph with points at (0, 20), (8, 0), (38, 0), and (39, -5).",
+      "code_length": 672,
+      "code_preview": "from manim import *\n\nclass HeatDiagramPlot(Scene):\n    def construct(self):\n        ax = Axes(\n            x_range=[0, 40, 5],\n            y_range=[-8, 32, 5],\n            x_length=9,\n            y_le"
+    },
+    "manim_ce": {
+      "description": "Example from Plotting with Manim\u00b6: HeatDiagramPlot",
+      "scene_name": "HeatDiagramPlot",
+      "code_length": 672,
+      "code_preview": "from manim import *\n\nclass HeatDiagramPlot(Scene):\n    def construct(self):\n        ax = Axes(\n            x_range=[0, 40, 5],\n            y_range=[-8, 32, 5],\n            x_length=9,\n            y_le"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a set of axes and plot the sine curve in blue. Show an orange dot at the start of the curve and two additional dots at the start and end of the curve. Zoom in the camera to follow the orange dot as it moves along the sine curve. At the end of the video restore the camera to its original state.",
+      "code_length": 949,
+      "code_preview": "from manim import *\n\nclass FollowingGraphCamera(MovingCameraScene):\n    def construct(self):\n        self.camera.frame.save_state()\n\n        # create the axes and the curve\n        ax = Axes(x_range=["
+    },
+    "manim_ce": {
+      "description": "Example from Special Camera Settings\u00b6: FollowingGraphCamera",
+      "scene_name": "FollowingGraphCamera",
+      "code_length": 949,
+      "code_preview": "from manim import *\n\nclass FollowingGraphCamera(MovingCameraScene):\n    def construct(self):\n        self.camera.frame.save_state()\n\n        # create the axes and the curve\n        ax = Axes(x_range=["
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a white dot shifted to the upper left. Firstly, display a purple rectangle around the dot and word \"Frame\" around that dot. The display a small red-framed inset springing up below, showing a close-up of whatever the purpose box encloses. Show \"Zoomed camera\" under this red-framed inset. The inset operates as a maginifier to the earlier purple rectangle. The inset briefly doubles in size for emphasis before the purple box drifts downward, shifting the zoom focus. Finally, fold the inset back into the purple rectangle gently erasing both frames, leaving only the original dot.",
+      "code_length": 2392,
+      "code_preview": "from manim import *\n\nclass MovingZoomedSceneAround(ZoomedScene):\n# contributed by TheoremofBeethoven, www.youtube.com/c/TheoremofBeethoven\n    def __init__(self, **kwargs):\n        ZoomedScene.__init_"
+    },
+    "manim_ce": {
+      "description": "Example from Special Camera Settings\u00b6: MovingZoomedSceneAround",
+      "scene_name": "MovingZoomedSceneAround",
+      "code_length": 2392,
+      "code_preview": "from manim import *\n\nclass MovingZoomedSceneAround(ZoomedScene):\n# contributed by TheoremofBeethoven, www.youtube.com/c/TheoremofBeethoven\n    def __init__(self, **kwargs):\n        ZoomedScene.__init_"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display 3D axes. Set the camera orientation to a specific angle. Show the text \"This is a 3D text\" fixed in the upper left corner of the frame.",
+      "code_length": 356,
+      "code_preview": "from manim import *\n\nclass FixedInFrameMObjectTest(ThreeDScene):\n    def construct(self):\n        axes = ThreeDAxes()\n        self.set_camera_orientation(phi=75 * DEGREES, theta=-45 * DEGREES)\n       "
+    },
+    "manim_ce": {
+      "description": "Example from Special Camera Settings\u00b6: FixedInFrameMObjectTest",
+      "scene_name": "FixedInFrameMObjectTest",
+      "code_length": 356,
+      "code_preview": "from manim import *\n\nclass FixedInFrameMObjectTest(ThreeDScene):\n    def construct(self):\n        axes = ThreeDAxes()\n        self.set_camera_orientation(phi=75 * DEGREES, theta=-45 * DEGREES)\n       "
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display 3D axes. Show a red checkerboard-patterned sphere. Place the light source above the sphere. Set the camera orientation to a specific angle.",
+      "code_length": 637,
+      "code_preview": "from manim import *\n\nclass ThreeDLightSourcePosition(ThreeDScene):\n    def construct(self):\n        axes = ThreeDAxes()\n        sphere = Surface(\n            lambda u, v: np.array([\n                1."
+    },
+    "manim_ce": {
+      "description": "Example from Special Camera Settings\u00b6: ThreeDLightSourcePosition",
+      "scene_name": "ThreeDLightSourcePosition",
+      "code_length": 637,
+      "code_preview": "from manim import *\n\nclass ThreeDLightSourcePosition(ThreeDScene):\n    def construct(self):\n        axes = ThreeDAxes()\n        sphere = Surface(\n            lambda u, v: np.array([\n                1."
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display 3D axes and a circle. Set the camera orientation to a specific angle. Begin rotating the camera around the scene horizontally at a slow rate. Stop the camera rotation and reset the camera to the original orientation.",
+      "code_length": 442,
+      "code_preview": "from manim import *\n\nclass ThreeDCameraRotation(ThreeDScene):\n    def construct(self):\n        axes = ThreeDAxes()\n        circle=Circle()\n        self.set_camera_orientation(phi=75 * DEGREES, theta=3"
+    },
+    "manim_ce": {
+      "description": "Example from Special Camera Settings\u00b6: ThreeDCameraRotation",
+      "scene_name": "ThreeDCameraRotation",
+      "code_length": 442,
+      "code_preview": "from manim import *\n\nclass ThreeDCameraRotation(ThreeDScene):\n    def construct(self):\n        axes = ThreeDAxes()\n        circle=Circle()\n        self.set_camera_orientation(phi=75 * DEGREES, theta=3"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display 3D axes and a circle. Set the camera orientation to a specific angle. Begin rotating the camera around 3D space of the scene at a fast rate to create an illusion effect of the 3D space. Stop the camera rotation after a quarter turn.",
+      "code_length": 375,
+      "code_preview": "from manim import *\n\nclass ThreeDCameraIllusionRotation(ThreeDScene):\n    def construct(self):\n        axes = ThreeDAxes()\n        circle=Circle()\n        self.set_camera_orientation(phi=75 * DEGREES,"
+    },
+    "manim_ce": {
+      "description": "Example from Special Camera Settings\u00b6: ThreeDCameraIllusionRotation",
+      "scene_name": "ThreeDCameraIllusionRotation",
+      "code_length": 375,
+      "code_preview": "from manim import *\n\nclass ThreeDCameraIllusionRotation(ThreeDScene):\n    def construct(self):\n        axes = ThreeDAxes()\n        circle=Circle()\n        self.set_camera_orientation(phi=75 * DEGREES,"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display 3D axes. Show a scaled-up 3D Gaussian surface with a green stroke and a checkerboard fill pattern in orange and blue. Set the camera orientation to a specific angle that shows the 3D view.",
+      "code_length": 883,
+      "code_preview": "from manim import *\n\nclass ThreeDSurfacePlot(ThreeDScene):\n    def construct(self):\n        resolution_fa = 24\n        self.set_camera_orientation(phi=75 * DEGREES, theta=-30 * DEGREES)\n\n        def p"
+    },
+    "manim_ce": {
+      "description": "Example from Special Camera Settings\u00b6: ThreeDSurfacePlot",
+      "scene_name": "ThreeDSurfacePlot",
+      "code_length": 883,
+      "code_preview": "from manim import *\n\nclass ThreeDSurfacePlot(ThreeDScene):\n    def construct(self):\n        resolution_fa = 24\n        self.set_camera_orientation(phi=75 * DEGREES, theta=-30 * DEGREES)\n\n        def p"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display the text \"This is some \\LaTeX\" and the mathematical expression \\(\\sum_{n=1}^\\infty \\frac{1}{n^2} = \\frac{\\pi^2}{6}\\) arranged vertically. Write the text and fade in the expression from above. Transform the text to \"That was a transform\" and move it to the upper left corner while fading out the expression. Display a number plane with the text \"This is a grid\" on top. Fade out the previous text and fade in the new text while creating the grid. Apply a non-linear transformation to the grid and update the text to \"That was a non-linear function applied to the grid.\"",
+      "code_length": 1653,
+      "code_preview": "from manim import *\n\nclass OpeningManim(Scene):\n    def construct(self):\n        title = Tex(r\"This is some \\LaTeX\")\n        basel = MathTex(r\"\\sum_{n=1}^\\infty \\frac{1}{n^2} = \\frac{\\pi^2}{6}\")\n     "
+    },
+    "manim_ce": {
+      "description": "Example from Advanced Projects\u00b6: OpeningManim",
+      "scene_name": "OpeningManim",
+      "code_length": 1653,
+      "code_preview": "from manim import *\n\nclass OpeningManim(Scene):\n    def construct(self):\n        title = Tex(r\"This is some \\LaTeX\")\n        basel = MathTex(r\"\\sum_{n=1}^\\infty \\frac{1}{n^2} = \\frac{\\pi^2}{6}\")\n     "
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display the x and y axes with labels for \\(\\pi\\), \\(2\\pi\\), \\(3\\pi\\), and \\(4\\pi\\) on the x-axis. Show a unit circle centered at (-4, 0). Move a yellow dot around the circle, with a blue line connecting the origin to the dot and a yellow line from the dot to the sine curve which is drawn dynamically on the plane as the dot moves around the circle.",
+      "code_length": 2682,
+      "code_preview": "from manim import *\n\nclass SineCurveUnitCircle(Scene):\n    # contributed by heejin_park, https://infograph.tistory.com/230\n    def construct(self):\n        self.show_axis()\n        self.show_circle()\n"
+    },
+    "manim_ce": {
+      "description": "Example from Advanced Projects\u00b6: SineCurveUnitCircle",
+      "scene_name": "SineCurveUnitCircle",
+      "code_length": 2682,
+      "code_preview": "from manim import *\n\nclass SineCurveUnitCircle(Scene):\n    # contributed by heejin_park, https://infograph.tistory.com/230\n    def construct(self):\n        self.show_axis()\n        self.show_circle()\n"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a square using a custom class that overrides the default `FadeIn` animation. Instead of fading in, the square is drawn using the `Create` animation when the scene plays.",
+      "code_length": 260,
+      "code_preview": "from manim import *\n\nclass MySquare(Square):\n    @override_animation(FadeIn)\n    def _fade_in_override(self, **kwargs):\n        return Create(self, **kwargs)\n\nclass OverrideAnimationExample(Scene):\n  "
+    },
+    "manim_ce": {
+      "description": "[PENDING_DESCRIPTION] - Create a Manim animation using OverrideAnimationExample",
+      "scene_name": "OverrideAnimationExample",
+      "code_length": 260,
+      "code_preview": "from manim import *\n\nclass MySquare(Square):\n    @override_animation(FadeIn)\n    def _fade_in_override(self, **kwargs):\n        return Create(self, **kwargs)\n\nclass OverrideAnimationExample(Scene):\n  "
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display the text \u201cFade In\u201d in large font as it fades into view from below while scaling up slightly. Then transform it into the text \u201cFade Out.\u201d Finally, animate \u201cFade Out\u201d fading away while moving further downward and scaling up.",
+      "code_length": 334,
+      "code_preview": "from manim import *\n\nclass Fading(Scene):\n    def construct(self):\n        tex_in = Tex(\"Fade\", \"In\").scale(3)\n        tex_out = Tex(\"Fade\", \"Out\").scale(3)\n        self.play(FadeIn(tex_in, shift=DOWN"
+    },
+    "manim_ce": {
+      "description": "[PENDING_DESCRIPTION] - Create a Manim animation using Fading",
+      "scene_name": "Fading",
+      "code_length": 334,
+      "code_preview": "from manim import *\n\nclass Fading(Scene):\n    def construct(self):\n        tex_in = Tex(\"Fade\", \"In\").scale(3)\n        tex_out = Tex(\"Fade\", \"Out\").scale(3)\n        self.play(FadeIn(tex_in, shift=DOWN"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a square, a circle, a triangle, an arrow, and a star arranged in two rows. Animate the square growing from the center of the screen, the circle expanding outward from its center, the triangle growing upward from its bottom edge, the arrow extending from left to right, and the star spinning into view from nothing.",
+      "code_length": 582,
+      "code_preview": "from manim import *\n\nclass Growing(Scene):\n    def construct(self):\n        square = Square()\n        circle = Circle()\n        triangle = Triangle()\n        arrow = Arrow(LEFT, RIGHT)\n        star = "
+    },
+    "manim_ce": {
+      "description": "[PENDING_DESCRIPTION] - Create a Manim animation using Growing",
+      "scene_name": "Growing",
+      "code_length": 582,
+      "code_preview": "from manim import *\n\nclass Growing(Scene):\n    def construct(self):\n        square = Square()\n        circle = Circle()\n        triangle = Triangle()\n        arrow = Arrow(LEFT, RIGHT)\n        star = "
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a series of text labels, each showing the name of a different indication animation in large font. For each label:\n\n1. Apply the corresponding indication effect:\n   - \u201cApplyWave\u201d animates a wave passing through the text.\n   - \u201cCircumscribe\u201d draws a border around the text.\n   - \u201cFlash\u201d creates a flashing effect at the top of the screen.\n   - \u201cFocusOn\u201d highlights the text with a spotlight effect.\n   - \u201cIndicate\u201d briefly highlights the text with a pulsing effect.\n   - \u201cShowPassingFlash\u201d animates an underline flashing across the text.\n   - \u201cWiggle\u201d makes the text wiggle.\n\n2. After each effect, fade out the current label upward and fade in the next one from below, cycling through all the animations.",
+      "code_length": 723,
+      "code_preview": "from manim import *\n\nclass Indications(Scene):\n    def construct(self):\n        indications = [ApplyWave,Circumscribe,Flash,FocusOn,Indicate,ShowPassingFlash,Wiggle]\n        names = [Tex(i.__name__).s"
+    },
+    "manim_ce": {
+      "description": "[PENDING_DESCRIPTION] - Create a Manim animation using Indications",
+      "scene_name": "Indications",
+      "code_length": 723,
+      "code_preview": "from manim import *\n\nclass Indications(Scene):\n    def construct(self):\n        indications = [ApplyWave,Circumscribe,Flash,FocusOn,Indicate,ShowPassingFlash,Wiggle]\n        names = [Tex(i.__name__).s"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a vertical sequence of annotation elements centered on screen: \n\n- A plain dot\n- A dot with an annotation ring\n- A dot labeled \"ii\"\n- A dot labeled with an orange Greek letter alpha\n- A large left-to-right curved arrow bending downward\n- A left-to-right curved arrow bending upward\n- Lastly, a double-headed curved arrow pointing right.\n\nEach of the above element is evenly spaced vertically.",
+      "code_length": 504,
+      "code_preview": "from manim import *\n\nclass UsefulAnnotations(Scene):\n    def construct(self):\n        m0 = Dot()\n        m1 = AnnotationDot()\n        m2 = LabeledDot(\"ii\")\n        m3 = LabeledDot(MathTex(r\"\\alpha\").s"
+    },
+    "manim_ce": {
+      "description": "[PENDING_DESCRIPTION] - Create a Manim animation using UsefulAnnotations",
+      "scene_name": "UsefulAnnotations",
+      "code_length": 504,
+      "code_preview": "from manim import *\n\nclass UsefulAnnotations(Scene):\n    def construct(self):\n        m0 = Dot()\n        m1 = AnnotationDot()\n        m2 = LabeledDot(\"ii\")\n        m3 = LabeledDot(MathTex(r\"\\alpha\").s"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display four different matrix styles arranged in a grid:\n\n- The first is a symbolic matrix with elements like \\( \\pi \\), 0, -1, and 1, enclosed in square brackets.\n- The second is an integer matrix with decimal and whole numbers, enclosed in parentheses.\n- The third is a decimal matrix with values rounded to two decimal places, enclosed in curly braces.\n- The fourth is a matrix of graphical objects including a circle, square, large \\( \\pi \\), and a star, enclosed in angle brackets.\n\nAll matrices appear on screen simultaneously without animation.",
+      "code_length": 735,
+      "code_preview": "from manim import *\n\nclass MatrixExamples(Scene):\n    def construct(self):\n        m0 = Matrix([[\"\\\\pi\", 0], [-1, 1]])\n        m1 = IntegerMatrix([[1.5, 0.], [12, -1.3]],\n            left_bracket=\"(\","
+    },
+    "manim_ce": {
+      "description": "[PENDING_DESCRIPTION] - Create a Manim animation using MatrixExamples",
+      "scene_name": "MatrixExamples",
+      "code_length": 735,
+      "code_preview": "from manim import *\n\nclass MatrixExamples(Scene):\n    def construct(self):\n        m0 = Matrix([[\"\\\\pi\", 0], [-1, 1]])\n        m1 = IntegerMatrix([[1.5, 0.], [12, -1.3]],\n            left_bracket=\"(\","
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a 2\u00d72 matrix  \n\\[\n\\begin{bmatrix}\n2 & 0 \\\\\n-1 & 1\n\\end{bmatrix}\n\\]  \nfollowed by a determinant expression showing that its determinant is 3. Both the matrix and the determinant text appear on screen simultaneously without animation.",
+      "code_length": 390,
+      "code_preview": "from manim import *\n\nclass DeterminantOfAMatrix(Scene):\n    def construct(self):\n        matrix = Matrix([\n            [2, 0],\n            [-1, 1]\n        ])\n\n        # scaling down the `det` string\n "
+    },
+    "manim_ce": {
+      "description": "[PENDING_DESCRIPTION] - Create a Manim animation using DeterminantOfAMatrix",
+      "scene_name": "DeterminantOfAMatrix",
+      "code_length": 390,
+      "code_preview": "from manim import *\n\nclass DeterminantOfAMatrix(Scene):\n    def construct(self):\n        matrix = Matrix([\n            [2, 0],\n            [-1, 1]\n        ])\n\n        # scaling down the `det` string\n "
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display five different types of tables arranged in two groups:\n\n- **Top Group (scaled down and aligned at the top):**\n  - A labeled table with two rows and two columns, including row and column headers and a top-left label. The cell at row 2, column 2 is highlighted in green.\n  - A decimal table showing values of \\(x\\) and \\(f(x) = e^x\\) for five evenly spaced \\(x\\)-values from -2 to 2. The cell at row 2, column 2 is highlighted in red.\n\n- **Bottom Group (scaled down and aligned at the bottom):**\n  - A math table with addition values, where the first row and column act as headers. The first three horizontal and vertical grid lines are colored blue and layered above the table.\n  - A table of geometric objects (circles and crosses), arranged in a 3\u00d73 grid. A red diagonal line crosses the table from bottom-left to top-right. It is a completed Tic-tac-toe game, 'O' has won.\n  - An integer table filled with numbers from 1 to 20 arranged in a 5\u00d74 grid, with outer lines included.\n\nAll tables are neatly arranged with spacing between them and displayed together on the screen.",
+      "code_length": 1717,
+      "code_preview": "from manim import *\n\nclass TableExamples(Scene):\n    def construct(self):\n        t0 = Table(\n            [[\"First\", \"Second\"],\n            [\"Third\",\"Fourth\"]],\n            row_labels=[Text(\"R1\"), Tex"
+    },
+    "manim_ce": {
+      "description": "[PENDING_DESCRIPTION] - Create a Manim animation using TableExamples",
+      "scene_name": "TableExamples",
+      "code_length": 1717,
+      "code_preview": "from manim import *\n\nclass TableExamples(Scene):\n    def construct(self):\n        t0 = Table(\n            [[\"First\", \"Second\"],\n            [\"Third\",\"Fourth\"]],\n            row_labels=[Text(\"R1\"), Tex"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a white title reading \"K-means clustering and Logistic Regression\" scaled down and positioned at the top of the screen. Below it, in the bottom-right quadrant, show a vertically arranged list of four white text items: \n\n- \"1. Measuring\"\n- \"2. Clustering\"\n- \"3. Regression\"\n- \"4. Prediction\"\n\nAll above are semi-transparent except for \"2. Clustering\", which is fully opaque, stressing it out over others.",
+      "code_length": 622,
+      "code_preview": "from manim import *\n\nclass TextAlignment(Scene):\n    def construct(self):\n        title = Text(\"K-means clustering and Logistic Regression\", color=WHITE)\n        title.scale(0.75)\n        self.add(tit"
+    },
+    "manim_ce": {
+      "description": "[PENDING_DESCRIPTION] - Create a Manim animation using TextAlignment",
+      "scene_name": "TextAlignment",
+      "code_length": 622,
+      "code_preview": "from manim import *\n\nclass TextAlignment(Scene):\n    def construct(self):\n        title = Text(\"K-means clustering and Logistic Regression\", color=WHITE)\n        title.scale(0.75)\n        self.add(tit"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display the text \"Hello World\" in blue at the center of the screen. The camera then smoothly zooms in to slightly enlarge the view around the text. After a brief pause, the camera smoothly zooms back out to its original framing, restoring the initial view.",
+      "code_length": 356,
+      "code_preview": "from manim import *\n\nclass ChangingCameraWidthAndRestore(MovingCameraScene):\n    def construct(self):\n        text = Text(\"Hello World\").set_color(BLUE)\n        self.add(text)\n        self.camera.fram"
+    },
+    "manim_ce": {
+      "description": "[PENDING_DESCRIPTION] - Create a Manim animation using ChangingCameraWidthAndRestore",
+      "scene_name": "ChangingCameraWidthAndRestore",
+      "code_length": 356,
+      "code_preview": "from manim import *\n\nclass ChangingCameraWidthAndRestore(MovingCameraScene):\n    def construct(self):\n        text = Text(\"Hello World\").set_color(BLUE)\n        self.add(text)\n        self.camera.fram"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a red semi-transparent square on the left and a green semi-transparent triangle on the right. After a brief pause, the camera smoothly pans to center on the square, then transitions to center on the triangle, creating a dynamic shift in focus between the two shapes.",
+      "code_length": 408,
+      "code_preview": "from manim import *\n\nclass MovingCameraCenter(MovingCameraScene):\n    def construct(self):\n        s = Square(color=RED, fill_opacity=0.5).move_to(2 * LEFT)\n        t = Triangle(color=GREEN, fill_opac"
+    },
+    "manim_ce": {
+      "description": "[PENDING_DESCRIPTION] - Create a Manim animation using MovingCameraCenter",
+      "scene_name": "MovingCameraCenter",
+      "code_length": 408,
+      "code_preview": "from manim import *\n\nclass MovingCameraCenter(MovingCameraScene):\n    def construct(self):\n        s = Square(color=RED, fill_opacity=0.5).move_to(2 * LEFT)\n        t = Triangle(color=GREEN, fill_opac"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a 2x2 grid of four scenes, each containing a circle on the left and a label reading \"This is Scene 0\" through \"This is Scene 3\" on the right. The camera starts focused on the first scene, then smoothly slides to center on each of the remaining scenes one by one. After visiting all scenes, the camera zooms out to show the entire grid with extra margin around it.",
+      "code_length": 678,
+      "code_preview": "from manim import *\n\nclass SlidingMultipleScenes(MovingCameraScene):\n    def construct(self):\n        def create_scene(number):\n            frame = Rectangle(width=16,height=9)\n            circ = Circ"
+    },
+    "manim_ce": {
+      "description": "[PENDING_DESCRIPTION] - Create a Manim animation using SlidingMultipleScenes",
+      "scene_name": "SlidingMultipleScenes",
+      "code_length": 678,
+      "code_preview": "from manim import *\n\nclass SlidingMultipleScenes(MovingCameraScene):\n    def construct(self):\n        def create_scene(number):\n            frame = Rectangle(width=16,height=9)\n            circ = Circ"
+    }
+  },
+  {
+    "manimbench": {
+      "description": "Display a green dot at the center of the screen. After a short pause, zooming functionality is activated (though not animated), preparing a magnified view. Then, the dot smoothly shifts to the left while the zoomed-in view follows the motion, highlighting the movement in detail.",
+      "code_length": 269,
+      "code_preview": "from manim import *\n\nclass UseZoomedScene(ZoomedScene):\n    def construct(self):\n        dot = Dot().set_color(GREEN)\n        self.add(dot)\n        self.wait(1)\n        self.activate_zooming(animate=F"
+    },
+    "manim_ce": {
+      "description": "[PENDING_DESCRIPTION] - Create a Manim animation using UseZoomedScene",
+      "scene_name": "UseZoomedScene",
+      "code_length": 269,
+      "code_preview": "from manim import *\n\nclass UseZoomedScene(ZoomedScene):\n    def construct(self):\n        dot = Dot().set_color(GREEN)\n        self.add(dot)\n        self.wait(1)\n        self.activate_zooming(animate=F"
+    }
+  }
+]

@@ -30,8 +30,8 @@ class ManimBenchExtractor(BaseExtractor):
     
     def estimate_sample_count(self) -> Optional[int]:
         """Return estimated number of samples."""
-        # Cleaned dataset has 412 samples (5 problematic ones removed)
-        return 412
+        # Cleaned dataset v5 has 407 samples (10 removed: 5 mismatches + 2 duplicates + 1 sound + 1 config + 1 import)
+        return 407
     
     def _download_dataset(self) -> bool:
         """Download cleaned ManimBench dataset from Kaggle if needed."""
@@ -63,11 +63,12 @@ class ManimBenchExtractor(BaseExtractor):
                 
             logger.info("Dataset downloaded successfully")
             
-            # The downloaded file should be manim_sft_dataset_cleaned_final.parquet
-            # Rename it to our expected name
-            downloaded_file = self.dataset_dir / "manim_sft_dataset_cleaned_final.parquet"
-            if downloaded_file.exists() and downloaded_file != self.dataset_file:
-                downloaded_file.rename(self.dataset_file)
+            # Check if the expected file exists after download
+            if not self.dataset_file.exists():
+                # Try to find any parquet file in the directory
+                parquet_files = list(self.dataset_dir.glob("*.parquet"))
+                if parquet_files and parquet_files[0] != self.dataset_file:
+                    parquet_files[0].rename(self.dataset_file)
             
             # Check if parquet file exists
             if not self.dataset_file.exists():

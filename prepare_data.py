@@ -309,6 +309,17 @@ def prepare_dataset(
             f.write(json.dumps(sample) + '\n')
     logger.info(f"Saved {len(valid_samples)} valid samples to {output_file} (filtered from {len(all_samples)} total)")
     
+    # Also save as individual deduplicated parquet files
+    import pandas as pd
+    logger.info(f"\n=== Saving Individual Deduplicated Parquets ===")
+    for source_id in sources_to_process:
+        source_samples = [s for s in valid_samples if s['source'] == source_id]
+        if source_samples:
+            df = pd.DataFrame(source_samples)
+            parquet_file = output_path / f"{source_id}_deduplicated.parquet"
+            df.to_parquet(parquet_file, index=False)
+            logger.info(f"Saved {len(df)} deduplicated samples for {source_id} to {parquet_file}")
+    
     # Save statistics
     stats_file = output_path / "stats.json"
     with open(stats_file, 'w') as f:

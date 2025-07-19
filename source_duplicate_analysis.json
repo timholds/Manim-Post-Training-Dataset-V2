@@ -1,0 +1,269 @@
+{
+  "summary": {
+    "total_docs_examples": 87,
+    "duplicates": 76,
+    "unique": 11,
+    "duplicate_rate": 87.35632183908046,
+    "tutorial_duplicate_rate": 88.37209302325581
+  },
+  "by_page": {
+    "examples.html": {
+      "total": 27,
+      "duplicates": 25,
+      "unique": 2,
+      "unique_examples": [
+        "GradientImageFromArray",
+        "PointWithTrace"
+      ]
+    },
+    "reference/manim.animation.animation.html": {
+      "total": 1,
+      "duplicates": 1,
+      "unique": 0,
+      "unique_examples": []
+    },
+    "reference/manim.animation.fading.html": {
+      "total": 1,
+      "duplicates": 1,
+      "unique": 0,
+      "unique_examples": []
+    },
+    "reference/manim.animation.growing.html": {
+      "total": 1,
+      "duplicates": 1,
+      "unique": 0,
+      "unique_examples": []
+    },
+    "reference/manim.animation.indication.html": {
+      "total": 1,
+      "duplicates": 1,
+      "unique": 0,
+      "unique_examples": []
+    },
+    "reference/manim.mobject.geometry.arc.html": {
+      "total": 1,
+      "duplicates": 1,
+      "unique": 0,
+      "unique_examples": []
+    },
+    "reference/manim.mobject.matrix.html": {
+      "total": 2,
+      "duplicates": 2,
+      "unique": 0,
+      "unique_examples": []
+    },
+    "reference/manim.mobject.table.html": {
+      "total": 1,
+      "duplicates": 1,
+      "unique": 0,
+      "unique_examples": []
+    },
+    "reference/manim.mobject.text.text_mobject.html": {
+      "total": 2,
+      "duplicates": 1,
+      "unique": 1,
+      "unique_examples": [
+        "HelloWorld"
+      ]
+    },
+    "reference/manim.scene.moving_camera_scene.html": {
+      "total": 5,
+      "duplicates": 3,
+      "unique": 2,
+      "unique_examples": [
+        "MovingAndZoomingCamera",
+        "MovingCameraOnGraph"
+      ]
+    },
+    "reference/manim.scene.zoomed_scene.html": {
+      "total": 2,
+      "duplicates": 1,
+      "unique": 1,
+      "unique_examples": [
+        "ChangingZoomScale"
+      ]
+    },
+    "tutorials/quickstart.html": {
+      "total": 2,
+      "duplicates": 1,
+      "unique": 1,
+      "unique_examples": [
+        "TransformCycle"
+      ]
+    },
+    "tutorials/building_blocks.html": {
+      "total": 12,
+      "duplicates": 11,
+      "unique": 1,
+      "unique_examples": [
+        "Shapes"
+      ]
+    },
+    "guides/deep_dive.html": {
+      "total": 3,
+      "duplicates": 2,
+      "unique": 1,
+      "unique_examples": [
+        "ToyExample"
+      ]
+    },
+    "guides/using_text.html": {
+      "total": 25,
+      "duplicates": 24,
+      "unique": 1,
+      "unique_examples": [
+        "t2gExample"
+      ]
+    },
+    "guides/add_voiceovers.html": {
+      "total": 1,
+      "duplicates": 0,
+      "unique": 1,
+      "unique_examples": [
+        "RecorderExample"
+      ]
+    }
+  },
+  "duplicate_samples": [
+    {
+      "docs_scene": "ManimCELogo",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Basic Concepts\u00b6: ManimCELogo",
+      "manimbench_description": "Set the background color to a light beige. Display a large black double-struck \"M\" shifted to the le",
+      "code_length": 687
+    },
+    {
+      "docs_scene": "BraceAnnotation",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Basic Concepts\u00b6: BraceAnnotation",
+      "manimbench_description": "Display two dots, one at the coordinates (-2, -1) and the other at (2, 1). Draw an orange line conne",
+      "code_length": 464
+    },
+    {
+      "docs_scene": "VectorArrow",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Basic Concepts\u00b6: VectorArrow",
+      "manimbench_description": "Display a number plane. Show a dot at the origin (0, 0) with the label \"(0, 0)\" below it. Draw an ar",
+      "code_length": 369
+    },
+    {
+      "docs_scene": "BooleanOperations",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Basic Concepts\u00b6: BooleanOperations",
+      "manimbench_description": "Display a blue ellipse on the left and a red ellipse on the right with the text \"Boolean Operation\" ",
+      "code_length": 1652
+    },
+    {
+      "docs_scene": "PointMovingOnShapes",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Animations\u00b6: PointMovingOnShapes",
+      "manimbench_description": "Display a dot at the origin. Draw a line from (3, 0) to (5, 0). Show a blue circle growing from its ",
+      "code_length": 521
+    },
+    {
+      "docs_scene": "MovingAround",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Animations\u00b6: MovingAround",
+      "manimbench_description": "Display a blue square. Move the square to the left. Change its fill color to orange. Scale the squar",
+      "code_length": 313
+    },
+    {
+      "docs_scene": "MovingAngle",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Animations\u00b6: MovingAngle",
+      "manimbench_description": "Display a stationary line from left to right. Show a second line rotating around a point on the left",
+      "code_length": 1491
+    },
+    {
+      "docs_scene": "MovingDots",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Animations\u00b6: MovingDots",
+      "manimbench_description": "Display a blue dot and a green dot arranged horizontally with a white line connecting them. Move the",
+      "code_length": 607
+    },
+    {
+      "docs_scene": "MovingGroupToDestination",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Animations\u00b6: MovingGroupToDestination",
+      "manimbench_description": "Display a group of four dots, with the third dot colored red, arranged horizontally and scaled up. S",
+      "code_length": 360
+    },
+    {
+      "docs_scene": "MovingFrameBox",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Animations\u00b6: MovingFrameBox",
+      "manimbench_description": "Display the mathematical expression for the product rule of differentiation. Draw a rectangle around",
+      "code_length": 545
+    },
+    {
+      "docs_scene": "RotationUpdater",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Animations\u00b6: RotationUpdater",
+      "manimbench_description": "Display a white line from the origin to the left. Show a yellow line from the origin to the left tha",
+      "code_length": 654
+    },
+    {
+      "docs_scene": "SinAndCosFunctionPlot",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Plotting with Manim\u00b6: SinAndCosFunctionPlot",
+      "manimbench_description": "Display a set of green axes with labels. Plot the sine function in blue and the cosine function in r",
+      "code_length": 1223
+    },
+    {
+      "docs_scene": "ArgMinExample",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Plotting with Manim\u00b6: ArgMinExample",
+      "manimbench_description": "Display a set of axes with labels \"x\" and \"f(x)\". Plot the function \\( f(x) = 2(x - 5)^2 \\) in maroo",
+      "code_length": 818
+    },
+    {
+      "docs_scene": "GraphAreaPlot",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Plotting with Manim\u00b6: GraphAreaPlot",
+      "manimbench_description": "Display a set of axes with labels. Plot two curves: one in blue and the other in green. Draw yellow ",
+      "code_length": 959
+    },
+    {
+      "docs_scene": "PolygonOnAxes",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Plotting with Manim\u00b6: PolygonOnAxes",
+      "manimbench_description": "Display a set of axes. Plot the graph of the function \\( f(x) = \\frac{k}{x} \\) in yellow. Show a blu",
+      "code_length": 1560
+    },
+    {
+      "docs_scene": "HeatDiagramPlot",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Plotting with Manim\u00b6: HeatDiagramPlot",
+      "manimbench_description": "Display a set of axes with labels \\(\\Delta Q\\) for the x-axis and \\(T[^\\circ C]\\) for the y-axis. Pl",
+      "code_length": 672
+    },
+    {
+      "docs_scene": "FollowingGraphCamera",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Special Camera Settings\u00b6: FollowingGraphCamera",
+      "manimbench_description": "Display a set of axes and plot the sine curve in blue. Show an orange dot at the start of the curve ",
+      "code_length": 949
+    },
+    {
+      "docs_scene": "MovingZoomedSceneAround",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Special Camera Settings\u00b6: MovingZoomedSceneAround",
+      "manimbench_description": "Display a white dot shifted to the upper left. Firstly, display a purple rectangle around the dot an",
+      "code_length": 2392
+    },
+    {
+      "docs_scene": "FixedInFrameMObjectTest",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Special Camera Settings\u00b6: FixedInFrameMObjectTest",
+      "manimbench_description": "Display 3D axes. Set the camera orientation to a specific angle. Show the text \"This is a 3D text\" f",
+      "code_length": 356
+    },
+    {
+      "docs_scene": "ThreeDLightSourcePosition",
+      "docs_page": "examples.html",
+      "docs_description": "Example from Special Camera Settings\u00b6: ThreeDLightSourcePosition",
+      "manimbench_description": "Display 3D axes. Show a red checkerboard-patterned sphere. Place the light source above the sphere. ",
+      "code_length": 637
+    }
+  ]
+}

@@ -1,7 +1,9 @@
+## Order of Operations for Cleaning
 Rendering validation comes last, since it's the most expensive
 
 We don't even need to render the videos directly, since this would take up quite a bit of space. It's cool to think about the code being a latent, compressed version of the video, and the type of intelligent system it takes to uncompress this into it's most elegant form. 
 
+Inter-scene dependencies are a problem, since we are trying to teach the model to write self-contained scenes. This is where most of the brain power comes in, since things like inlining functions, etc
 
 How should we handle custom assets? Should we just replace them with boxes? should we try to give the model access to a fixed database of assets and teach it how to use them like any other tool?
 One idea:
@@ -25,6 +27,20 @@ For the first type, we just need to make sure that the other data sources don't 
 need to ensure that the code is actually valid python,
 
 Inlining needed on al
+
+## Sanity Checking Code with the Description
+This is actually a great task for a current LLM, since its a matter of doing some fuzzy associate reasoning to compare two pieces of data, the code and the description, and asking it to give a binary answer. Even better, going through each row of a dataset and doing this comparison is pretty repetitive, so we are happy to automate it. I've also rendered all the samples out with Manim and looked at the videos and images myself.
+
+# File Storage
+### Should we keep the intermediate files?
+We are combining data from different sources into a single fine tuning dataset. We are processing each dataset both individually (removing bad samples) and as an aggregate (removing duplicates). 
+
+Should we store the cleaned source files somewhere? I don't care that much about having a repo able to perfectly recreate the  dataset as much as I care about the dataset, but i would like to make the repo logical and easy to use if someone wanted to recreate the dataset for themselves.
+
+Here are some options as i see it:
+- deduplicate, clean, and validate ALL the sources and store them in one single parquet file. Having a single cleaned parquet file is the end goal, but this method requires having all the source extractors working, which is antithical to my plan of getting a simple dataset working then expanding it.
+- clean and validate the dataset sources individually and store each of them as their own parquet file. then use the prepare_data script to deduplicate and combine the cleaned sources. This is what we are doing, which works well since we can save cleaned sources as we go.
+
 
 # Deduplication
 Do we do this based on the code itself, the description of the code, or both? There are actually several different cases and it's not immediately obvious what the best approach is.
@@ -61,3 +77,7 @@ When we get long form videos, are we trying to split them into self contained sc
 
 # Gotchas
 - inlining large files as string literals might change how Manim's `Write()` animation behaves, even with the same `run_time` parameter
+
+
+# Questions
+What is the most elegant way to handle asset files when we are extracting new data sources? asset files in manimce videos are custom images that people use. this is a tricky problem because many of the datasets in the wild use custom assets in their videos. we can even download the custo assets from github most of the time, but i don't love the idea of training a model to use assets that certainly don't exist. maaayyyybe if we taught the model to check if an asset exists before using it but that's a different beast

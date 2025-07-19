@@ -48,18 +48,29 @@ uv pip install -r requirements.txt
 ### Prepare Dataset
 
 ```bash
-# Download and process all datasets with deduplication
-python prepare_data.py prepare
+# Process all available sources
+python prepare_data.py
 
-# List available data sources
-python prepare_data.py --list-sources
+# Process specific sources
+python prepare_data.py --source manimbench --source manim_ce_docs
 
-# Process specific datasets
-python prepare_data.py prepare --sources bespoke_manim thanks_dataset
+# Skip render validation for faster testing
+python prepare_data.py --skip-render
 
-# Enable data augmentation (creates variations of prompts)
-python prepare_data.py prepare --augmentation
+# Process sources in parallel
+python prepare_data.py --parallel
+
+# Process single source
+python prepare_data.py --source manimbench
 ```
+
+The script will:
+1. Extract examples from each source
+2. Validate examples (structure and optionally render validation)
+3. Deduplicate within each source
+4. Save individual datasets to `data/processed/`
+5. Create merged dataset in `data/final/`
+6. Generate statistics in `data/metadata/`
 
 ### Enhance with LLM Descriptions (Optional)
 
@@ -76,29 +87,35 @@ python prepare_data_with_llm.py cache-stats
 
 ## Key Features
 
-- 🔌 **Plugin-based architecture** - Add new data sources by creating a single extractor file
-- 🔍 **Automatic deduplication** - Intelligent duplicate removal across multiple sources
-- 📊 **Model-agnostic dataset** - Handles special tokens during training
-- 🤖 **LLM-enhanced descriptions** - Optional LLM generation with smart caching
-- 📐 **Decoupled pipeline** - Each stage (extract → enhance → train) is independent
-- 🚀 **Efficient training** - 4-bit quantized training with ~12GB VRAM usage
-- 🧪 **Comprehensive evaluation** - Weights & Biases integration for metrics
-- 🔧 **Easy deployment** - Export to Ollama-compatible GGUF format
+- 🔌 **Modular extractors** - Each data source has its own extractor
+- 🔍 **Two-stage deduplication** - Within-source and cross-source deduplication
+- ✅ **Render validation** - Optional validation that code actually renders
+- 📊 **Individual & merged datasets** - Keep source datasets separate or use combined
+- 📈 **Comprehensive statistics** - Track examples, file sizes, and deduplication rates
+- 🚀 **Parallel processing** - Process multiple sources concurrently
+- 💾 **Efficient storage** - Parquet format with compression
+- 🎯 **Source prioritization** - Prefer higher-quality sources when deduplicating
 
 ## Project Structure
 
 ```
 manim-post-training-dataset-v2/
 ├── prepare_data.py          # Main data preparation script
-├── fine_tune.py             # Universal training script
-├── extractors/              # Plugin-based data extractors
+├── extractors/              # Data source extractors
 │   ├── base.py             # Base extractor interface
-│   ├── registry.py         # Dynamic extractor registry
+│   ├── utils.py            # Shared utilities (normalization, etc)
 │   └── sources/            # Individual data source extractors
-│       ├── kaggle.py       # Kaggle datasets (Manimbench)
-│       ├── huggingface.py  # HuggingFace datasets
-│       └── local.py        # Local file extractors
-
+│       ├── manimbench.py   # ManimBench dataset extractor
+│       └── manim_ce_docs.py # Manim CE documentation extractor
+├── data/                    # Output directory (created by script)
+│   ├── processed/          # Individual validated datasets
+│   │   ├── manimbench.parquet
+│   │   └── manim_ce_docs.parquet
+│   ├── final/              # Merged dataset
+│   │   └── manim_combined.parquet
+│   └── metadata/           # Statistics and duplicate info
+│       ├── dataset_stats.json
+│       └── cross_duplicates.json
 ```
 
 ## Adding New Data Sources
@@ -118,8 +135,17 @@ class YourSourceExtractor(BaseExtractor):
     
     def extract(self):
         # Your extraction logic here
-        yield {"description": "...", "code": "..."}
+        yield {"description": "...", "code": "...", "metadata": {...}}
 ```
+
+### Extractor Output Format
+
+Each extractor must yield dictionaries with this structure:
+- **description** (str, required): Description of what the code does (min 5 chars)
+- **code** (str, required): Raw Python Manim code (min 20 chars, no markdown)
+- **metadata** (dict, optional): Source-specific metadata (URLs, indices, etc.)
+
+The base class automatically adds a `source` field. Code should be valid Manim with Scene classes.
 
 See the [Adding New Data Sources](docs/migration_guide.md) guide for detailed instructions.
 
