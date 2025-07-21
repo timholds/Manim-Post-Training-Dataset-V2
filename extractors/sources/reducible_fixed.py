@@ -27,19 +27,36 @@ class ReducibleFixedExtractor(BaseExtractor):
     def _validate_config(self) -> None:
         """Validate configuration for this extractor."""
         self.parquet_path = Path(self.config.get("parquet_path", "data_formatted/reducible_final.parquet"))
+        
+        # This is an optional extractor - log a warning instead of failing
         if not self.parquet_path.exists():
-            raise ValueError(f"Fixed Reducible parquet not found at {self.parquet_path}")
+            logger.warning(
+                f"Fixed Reducible parquet not found at {self.parquet_path}. "
+                f"This file contains manually corrected Reducible samples. "
+                f"To use this extractor, first run the regular 'reducible' extractor, "
+                f"then manually fix any issues and save the corrected samples to {self.parquet_path}"
+            )
+            self._skip_extraction = True
+        else:
+            self._skip_extraction = False
     
     def estimate_sample_count(self) -> Optional[int]:
         """Return estimated number of samples."""
+        if hasattr(self, '_skip_extraction') and self._skip_extraction:
+            return 0
         try:
             df = pd.read_parquet(self.parquet_path)
             return len(df)
         except:
-            return None
+            return 0
     
     def extract(self) -> Iterator[Dict[str, Any]]:
         """Extract samples from the fixed parquet file."""
+        
+        # Skip extraction if file doesn't exist
+        if self._skip_extraction:
+            logger.info("Skipping reducible_fixed extraction - parquet file not found")
+            return
         
         df = pd.read_parquet(self.parquet_path)
         logger.info(f"Loaded {len(df)} fixed samples from {self.parquet_path}")

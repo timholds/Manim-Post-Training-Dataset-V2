@@ -8,6 +8,7 @@ fix deprecated functions, and modernize API usage for compatibility with current
 import ast
 import logging
 import re
+import subprocess
 from pathlib import Path
 from typing import List, Dict, Optional, Any, Iterator
 from urllib.parse import urljoin
@@ -65,16 +66,51 @@ class BeethovenExtractor(BaseExtractor):
             "framework": "manim_ce"
         }
 
+    def _download_repository(self) -> bool:
+        """Download the Beethoven tutorial repository if not present."""
+        try:
+            self.logger.info(f"Downloading Beethoven tutorial repository to {self.cache_dir}")
+            self.base_cache_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Clone the repository
+            cmd = [
+                'git', 'clone',
+                self.repo_url,
+                str(self.cache_dir)
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                self.logger.info("Successfully downloaded Beethoven tutorial repository")
+                return True
+            else:
+                self.logger.error(f"Failed to clone repository: {result.stderr}")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error downloading repository: {e}")
+            return False
+
     def extract_scenes(self) -> List[Dict[str, Any]]:
         """Extract and process all scenes from the Beethoven tutorial"""
         scenes = []
         
+        # Check if cache directory exists, if not, download it
         if not self.cache_dir.exists():
-            self.logger.warning(f"Cache directory {self.cache_dir} does not exist")
+            self.logger.info(f"Cache directory {self.cache_dir} does not exist, downloading...")
+            if not self._download_repository():
+                self.logger.error("Failed to download Beethoven tutorial repository")
+                return scenes
+        
+        # Verify the directory now exists and has content
+        if not self.cache_dir.exists() or not any(self.cache_dir.glob("_*.py")):
+            self.logger.error(f"Cache directory {self.cache_dir} is empty or missing tutorial files")
             return scenes
             
         # Process each tutorial file
         tutorial_files = sorted(self.cache_dir.glob("_*.py"))
+        self.logger.info(f"Found {len(tutorial_files)} tutorial files to process")
         
         for file_path in tutorial_files:
             self.logger.info(f"Processing {file_path.name}")

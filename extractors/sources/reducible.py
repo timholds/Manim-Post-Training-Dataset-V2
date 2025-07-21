@@ -5,6 +5,7 @@ Extractor for Reducible dataset - extracts asset-free ManimCE scenes
 import ast
 import os
 import re
+import subprocess
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional, Any, Iterator
 import json
@@ -52,16 +53,48 @@ class ReducibleExtractor(BaseExtractor):
                 "skip_scenes": []  # We'll identify which use assets during extraction
             },
             "2022/PageRank/markov_chain.py": {
-                "common_imports": ["reducible_colors"],
+                "common_imports": ["reducible_colors", "functions"],
                 "skip_scenes": []
             }
         }
         
     def _validate_config(self) -> None:
         """Validate configuration for this extractor."""
-        self.repo_path = Path(self.config.get("repo_path", "Reducible"))
+        self.repo_path = Path(self.config.get("repo_path", "raw/Reducible"))
+        self.repo_url = "https://github.com/nipunramk/Reducible.git"
+        
+        # Download repository if it doesn't exist
         if not self.repo_path.exists():
-            raise ValueError(f"Reducible repository not found at {self.repo_path}")
+            logger.info(f"Reducible repository not found at {self.repo_path}, downloading...")
+            if not self._download_repository():
+                raise ValueError(f"Failed to download Reducible repository to {self.repo_path}")
+    
+    def _download_repository(self) -> bool:
+        """Download the Reducible repository if not present."""
+        try:
+            logger.info(f"Downloading Reducible repository to {self.repo_path}")
+            # Create parent directory if needed
+            self.repo_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Clone the repository
+            cmd = [
+                'git', 'clone',
+                self.repo_url,
+                str(self.repo_path)
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                logger.info("Successfully downloaded Reducible repository")
+                return True
+            else:
+                logger.error(f"Failed to clone repository: {result.stderr}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error downloading repository: {e}")
+            return False
     
     def estimate_sample_count(self) -> Optional[int]:
         """Return estimated number of samples."""
@@ -153,7 +186,7 @@ class ReducibleExtractor(BaseExtractor):
         """Extract only module-level import statements from AST"""
         imports = []
         
-        # Skip problematic imports
+        # Skip problematic imports (we handle these specially)
         skip_modules = ['lookup', 'markov_chain', 'classes', 'functions', 'reducible_colors']
         
         # Only look at module-level nodes, not inside functions/classes
@@ -352,13 +385,8 @@ class ReducibleExtractor(BaseExtractor):
         )
         
         # Fix 4: Matrix with string elements
-        # This is more complex, we need to wrap string elements in MathTex
-        # For now, let's fix the specific pattern we see
-        code = re.sub(
-            r'str_repr = \[\[f"{a:.2f}" for a in row\] for row in matrix\]',
-            r'str_repr = [[MathTex(f"{a:.2f}") for a in row] for row in matrix]',
-            code
-        )
+        # Actually, don't fix this - the original code uses strings with Text
+        # The Matrix class handles this correctly when element_to_mobject=Text
         
         # Fix 5: Title scale_factor parameter
         # Change: Title("...", scale_factor=1.2) -> Title("...").scale(1.2)
@@ -557,6 +585,44 @@ REDUCIBLE_MONO = "SF Mono"'''
                 
                 if extracted_code:
                     return '\n\n'.join(extracted_code)
+        
+        elif module_name == "functions":
+            # Extract specific functions from common/functions.py
+            functions_path = self.repo_path / "2022/common/functions.py"
+            if functions_path.exists():
+                with open(functions_path, 'r') as f:
+                    content = f.read()
+                # Extract specific functions that are commonly used
+                tree = ast.parse(content)
+                functions_to_extract = [
+                    'get_glowing_surround_circle',
+                    'get_glowing_surround_rect',
+                    'align_text_vertically',
+                    'matrix_to_mob'
+                ]
+                extracted_code = []
+                
+                # First check if we need any imports from the file
+                needed_imports = []
+                for node in tree.body:
+                    if isinstance(node, (ast.Import, ast.ImportFrom)):
+                        import_str = ast.get_source_segment(content, node)
+                        # Skip manim and reducible_colors imports (already handled)
+                        if import_str and 'manim' not in import_str and 'reducible_colors' not in import_str:
+                            needed_imports.append(import_str)
+                
+                if needed_imports:
+                    extracted_code.extend(needed_imports)
+                    extracted_code.append("")
+                
+                for node in tree.body:
+                    if isinstance(node, ast.FunctionDef) and node.name in functions_to_extract:
+                        func_code = ast.get_source_segment(content, node)
+                        if func_code:
+                            extracted_code.append(func_code)
+                
+                if extracted_code:
+                    return '\n'.join(extracted_code)
                     
         return None
     

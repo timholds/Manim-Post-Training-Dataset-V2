@@ -24,7 +24,7 @@ class ManimBenchExtractor(BaseExtractor):
     
     def _validate_config(self) -> None:
         """Validate configuration."""
-        self.data_dir = Path(self.config.get("data_dir", "data"))
+        self.data_dir = Path(self.config.get("data_dir", "raw"))
         self.dataset_dir = self.data_dir / "manimbench"
         self.dataset_file = self.dataset_dir / "manim_sft_dataset_cleaned.parquet"
     

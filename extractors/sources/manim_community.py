@@ -25,7 +25,7 @@ class ManimCommunityExtractor(BaseExtractor):
     
     def _validate_config(self) -> None:
         """Validate configuration."""
-        self.data_dir = Path(self.config.get("data_dir", "data"))
+        self.data_dir = Path(self.config.get("data_dir", "raw"))
         self.repo_dir = self.data_dir / "manim_community_repo"
         self.repo_url = "https://github.com/ManimCommunity/manim.git"
         
