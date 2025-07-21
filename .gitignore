@@ -33,6 +33,8 @@ reference_manim*/
 cache/
 extracted_scenes/
 
+outputs/
+raw/
 # Manim output
 media/
 animations/

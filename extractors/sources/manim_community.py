@@ -149,8 +149,10 @@ class ManimCommunityExtractor(BaseExtractor):
             if line.strip().startswith('from __future__'):
                 future_imports.append(line)
             elif line.strip().startswith(('import', 'from')):
-                # Skip testing framework imports
-                if 'frames_comparison' not in line and 'pytest' not in line:
+                # Skip testing framework imports and relative imports
+                if ('frames_comparison' not in line and 
+                    'pytest' not in line and 
+                    not line.strip().startswith('from ..')):
                     imports.append(line)
         
         # Build imports with proper order: __future__ first, then manim, then others
