@@ -413,14 +413,13 @@ class ManimCommunityExtractor(BaseExtractor):
         if self.extract_examples:
             examples_dir = self.repo_dir / "example_scenes"
             if examples_dir.exists():
-                logger.info(f"Extracting examples from {examples_dir}")
+                logger.debug(f"Extracting examples from {examples_dir}")
                 
                 for py_file in examples_dir.glob("*.py"):
                     # Skip __init__.py and config files
                     if py_file.name.startswith('_'):
                         continue
                     
-                    logger.debug(f"Processing example file: {py_file.name}")
                     scenes = self._extract_scene_classes(py_file)
                     
                     for class_name, code in scenes:
@@ -445,7 +444,7 @@ class ManimCommunityExtractor(BaseExtractor):
         if self.extract_tests:
             tests_dir = self.repo_dir / "tests" / "test_graphical_units"
             if tests_dir.exists():
-                logger.info(f"Extracting tests from {tests_dir}")
+                logger.debug(f"Extracting tests from {tests_dir}")
                 
                 # Process priority test files first
                 test_files = []
@@ -460,8 +459,6 @@ class ManimCommunityExtractor(BaseExtractor):
                         test_files.append(py_file)
                 
                 for py_file in test_files:
-                    logger.debug(f"Processing test file: {py_file.name}")
-                    
                     # Extract test functions
                     scenes = self._extract_test_functions(py_file)
                     
@@ -488,7 +485,7 @@ class ManimCommunityExtractor(BaseExtractor):
                         }
                         extracted_count += 1
         
-        logger.info(f"Extracted {extracted_count} scenes from ManimCommunity repository")
+        logger.info(f"Extracted {extracted_count} samples from {self.source_id}")
     
     def validate_sample(self, sample: Dict[str, Any]) -> bool:
         """Validate that a sample meets quality requirements."""
@@ -517,8 +514,7 @@ class ManimCommunityExtractor(BaseExtractor):
                 "self.widgets", "dpg.get_value"
             ]
             if any(indicator in code for indicator in opengl_indicators):
-                logger.debug(f"Skipping OpenGL scene: {sample.get('metadata', {}).get('class_name', 'Unknown')}")
-                return False
+                    return False
             
             # Skip scenes with complex custom LaTeX that can't be easily transformed
             # Note: We now transform most LaTeX issues, so this is only for extreme cases
@@ -527,7 +523,6 @@ class ManimCommunityExtractor(BaseExtractor):
                 "TexFontTemplateManual",   # Uses complex custom font definitions
             ]
             if any(indicator in code for indicator in complex_latex_indicators):
-                logger.debug(f"Skipping complex LaTeX scene: {sample.get('metadata', {}).get('class_name', 'Unknown')}")
                 return False
             
             # Skip test scenes with testing framework dependencies that can't be transformed
@@ -536,7 +531,6 @@ class ManimCommunityExtractor(BaseExtractor):
                 "__module_test__"  # Only skip if this module-level marker is still present
             ]
             if any(indicator in code for indicator in test_framework_indicators):
-                logger.debug(f"Skipping test framework scene: {sample.get('metadata', {}).get('class_name', 'Unknown')}")
                 return False
             
             # Skip scenes with external file dependencies that won't exist
@@ -544,7 +538,6 @@ class ManimCommunityExtractor(BaseExtractor):
                 'script_location / "assets"', 'Path(__file__)', "day_texture", "night_texture"
             ]
             if any(indicator in code for indicator in file_dependency_indicators):
-                logger.debug(f"Skipping file dependency scene: {sample.get('metadata', {}).get('class_name', 'Unknown')}")
                 return False
             
             return True

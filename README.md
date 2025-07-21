@@ -109,16 +109,14 @@ manim-post-training-dataset-v2/
 │       ├── manim_ce_docs.py # Manim CE documentation extractor
 │       ├── manim_community.py # Manim Community examples
 │       ├── beethoven.py    # Elteoremadebeethoven tutorials
-│       ├── reducible.py    # Reducible YouTube channel
-│       └── reducible_fixed.py # Pre-fixed Reducible samples
+│       └── reducible.py    # Reducible YouTube channel
 ├── outputs/                 # Output directory (created by script)
 │   ├── sources/            # Individual validated datasets
 │   │   ├── manimbench.parquet
 │   │   ├── manim_ce_docs.parquet
 │   │   ├── manim_community.parquet
 │   │   ├── beethoven.parquet
-│   │   ├── reducible.parquet
-│   │   └── reducible_fixed.parquet
+│   │   └── reducible.parquet
 │   ├── manim_dataset_final.parquet  # Combined dataset
 │   ├── dataset.jsonl       # JSONL format output
 │   └── stats.json          # Statistics and metrics
