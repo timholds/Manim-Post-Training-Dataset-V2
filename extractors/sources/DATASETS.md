@@ -15,6 +15,34 @@ This document describes the available datasets and any source-specific processin
 - There's three cases where the descriptions are identical but the code is different. We kept the ones with the simpler code and remove the other. 
 - There's a few scenes that have incorrect code and don't render. I took these out as well. 
 
+## Reducible
+**Link:** https://github.com/nipunramk/Reducible  
+**Format:** Python files organized by year and video topic  
+**Code Format:** Raw Python code with custom imports and dependencies  
+**Special Processing:** Extensive processing required:
+- Extract individual Scene classes from larger files
+- Filter for ManimCE content only (2022 videos + MarchingSquares from 2021)
+- Skip scenes that use external assets (images, SVGs)
+- Inline dependencies from common modules (reducible_colors, markov_chain, classes)
+- Fix API compatibility issues between older Manim versions and current ManimCE
+
+### Idiosyncrasies
+- High-quality educational animations from the Reducible YouTube channel
+- ~51% of scenes are asset-free and suitable for extraction (38 out of 74 ManimCE scenes)
+- ~42% of extracted scenes render successfully with automatic fixes (16 out of 38)
+- Many scenes have inter-dependencies requiring module inlining
+- Utility base classes (ending with "Utils") are skipped as they're not meant to be rendered directly
+- Contains mix of animated scenes (MP4) and static visualizations (PNG)
+- Required fixes for common API changes:
+  - Color interpolation (string colors need ManimColor wrapper)
+  - Title scale_factor parameter (deprecated, use .scale() method)
+  - Text weight parameter (needs string quotes: BOLD → "BOLD")
+  - Font parameters in Tex/MathTex (no longer supported, removed entirely)
+  - CustomLabel scale parameter (use .scale() method instead)
+  - Matrix string elements (wrap with MathTex)
+  - Import fixes (scipy.sqrt → numpy.sqrt)
+- Remaining rendering issues primarily in PageRank scenes involving complex MarkovChain visualizations
+
 
 
 ## Notes for Adding New Sources

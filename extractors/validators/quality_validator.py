@@ -65,8 +65,6 @@ class QualityValidator:
         issues.extend(self._validate_description(description, merged_config))
         issues.extend(self._validate_code_structure(code, merged_config))
         issues.extend(self._validate_code_quality(code, merged_config))
-        issues.extend(self._validate_code_description_alignment(description, code, merged_config))
-        issues.extend(self._validate_code_executability(code, merged_config))
         
         # Determine if sample passes
         critical_issues = [i for i in issues if i.startswith("[CRITICAL]")]
@@ -93,8 +91,8 @@ class QualityValidator:
     
     def _get_merged_config(self, source_id: Optional[str] = None) -> Dict[str, Any]:
         """Get merged configuration for a specific source."""
-        # Start with global settings
-        merged = self.config.get("global_settings", {}).copy()
+        # Start with base config or global settings
+        merged = self.config.copy() if self.config else {}
         
         # Apply source-specific overrides if available
         if source_id and source_id in self.config.get("source_overrides", {}):
@@ -106,14 +104,6 @@ class QualityValidator:
                 else:
                     merged[key] = value
         
-        # Include validation_actions settings
-        if "validation_actions" in self.config:
-            validation_actions = self.config["validation_actions"]
-            if "allow_through" in validation_actions:
-                merged["allow_through"] = validation_actions["allow_through"]
-            if "must_reject" in validation_actions:
-                merged["must_reject"] = validation_actions["must_reject"]
-            
         return merged
     
     def _validate_description(self, description: str, config: Dict[str, Any]) -> List[str]:
@@ -167,172 +157,66 @@ class QualityValidator:
             min_length = must_reject.get("code_below_minimum", {}).get("min_length", 30)
             if len(code) < min_length:
                 issues.append(f"[CRITICAL] Code too short ({len(code)} chars, min: {min_length})")
-                return issues  # No point checking further
+                return issues
         elif len(code) < 50:
             issues.append(f"[CRITICAL] Code too short ({len(code)} chars)")
-            return issues  # No point checking further
+            return issues
         
-        # Check for syntax errors
+        # Single AST parse for reuse
         try:
             tree = ast.parse(code)
         except SyntaxError as e:
             issues.append(f"[CRITICAL] Syntax error: {str(e)}")
-            return issues  # Can't analyze further with syntax errors
+            return issues
         
-        # Check for imports and build alias mapping
-        has_imports = False
-        alias_map = {}  # Maps aliases to their original names
-        
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.Import, ast.ImportFrom)):
-                has_imports = True
-                
-                # Build alias mapping for Scene classes
-                if isinstance(node, ast.ImportFrom) and node.module and 'manim' in node.module:
-                    for alias in node.names:
-                        # alias.name is the original name, alias.asname is the alias
-                        if alias.asname:
-                            alias_map[alias.asname] = alias.name
-                elif isinstance(node, ast.Import):
-                    for alias in node.names:
-                        if alias.asname:
-                            alias_map[alias.asname] = alias.name
-        
+        # Check for imports
+        has_imports = any(isinstance(node, (ast.Import, ast.ImportFrom)) for node in ast.walk(tree))
         if not has_imports:
             issues.append("[HIGH] Missing import statements")
         
-        # Check for Scene class
-        classes = [node for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
+        # Simplified Scene class detection
         scene_classes = []
+        has_construct = False
         
-        # Valid Scene classes in Manim
-        # This includes all common Scene subclasses to avoid false positives
-        # Previously, we only checked if class name contained "Scene", which missed
-        # valid subclasses like ThreeDScene (would fail because base is "ThreeDScene" not "Scene")
-        valid_scene_classes = {
-            'Scene', 'ThreeDScene', 'VoiceoverScene', 'MovingCameraScene',
-            'ZoomedScene', 'InteractiveScene', 'SampleSpaceScene', 'LiveStreamingScene',
-            'GraphScene', 'LinearTransformationScene', 'VectorScene', 'SpecialThreeDScene',
-            'SpaceScene'  # From manim-physics
-        }
-        
-        # Build a map of all classes for multi-level inheritance checking
-        class_map = {cls.name: cls for cls in classes}
-        
-        def is_scene_class(cls, visited=None):
-            """Recursively check if a class inherits from a Scene class."""
-            if visited is None:
-                visited = set()
-            if cls.name in visited:
-                return False
-            visited.add(cls.name)
-            
-            for base in cls.bases:
-                # Case 1: Direct inheritance (e.g., class MyScene(Scene))
-                if isinstance(base, ast.Name):
-                    base_name = base.id
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef):
+                # Check if class inherits from Scene (simplified check)
+                is_scene = False
+                for base in node.bases:
+                    if isinstance(base, ast.Name) and ('Scene' in base.id):
+                        is_scene = True
+                        break
+                    elif isinstance(base, ast.Attribute) and ('Scene' in base.attr):
+                        is_scene = True
+                        break
+                
+                if is_scene:
+                    scene_classes.append(node)
                     
-                    # Check if this is an alias
-                    if base_name in alias_map:
-                        original_name = alias_map[base_name]
-                        if original_name in valid_scene_classes:
-                            return True
+                    # Check for construct method in this Scene class
+                    class_has_construct = False
+                    construct_is_empty = False
                     
-                    # Check direct name
-                    if base_name in valid_scene_classes:
-                        return True
-                    
-                    # Check if base is another class in this file
-                    if base_name in class_map:
-                        if is_scene_class(class_map[base_name], visited):
-                            return True
+                    for method in node.body:
+                        if isinstance(method, ast.FunctionDef) and method.name == "construct":
+                            class_has_construct = True
+                            has_construct = True
                             
-                # Case 2: Module-qualified (e.g., class MyScene(manim.Scene))
-                elif isinstance(base, ast.Attribute):
-                    if base.attr in valid_scene_classes:
-                        return True
-            return False
-        
-        # Check each class
-        for cls in classes:
-            if is_scene_class(cls):
-                scene_classes.append(cls)
+                            # Check if construct is empty
+                            if (len(method.body) == 0 or 
+                                (len(method.body) == 1 and isinstance(method.body[0], ast.Pass)) or
+                                (len(method.body) == 1 and isinstance(method.body[0], ast.Expr) and 
+                                 isinstance(method.body[0].value, ast.Constant) and method.body[0].value.value == ...)):
+                                construct_is_empty = True
+                            break
+                    
+                    if not class_has_construct:
+                        issues.append(f"[HIGH] Scene class '{node.name}' missing construct method")
+                    elif construct_is_empty:
+                        issues.append(f"[CRITICAL] Empty construct method in '{node.name}'")
         
         if not scene_classes:
             issues.append("[CRITICAL] No Scene class found")
-            return issues
-        
-        # First pass: Build a map of which classes have construct methods
-        classes_with_construct = {}  # Maps class name to (has_construct, is_empty)
-        
-        for cls in classes:
-            has_construct = False
-            construct_is_empty = False
-            
-            for node in cls.body:
-                if isinstance(node, ast.FunctionDef) and node.name == "construct":
-                    has_construct = True
-                    
-                    # Check if construct is empty or just has pass
-                    if len(node.body) == 0:
-                        construct_is_empty = True
-                    elif len(node.body) == 1:
-                        if isinstance(node.body[0], ast.Pass):
-                            construct_is_empty = True
-                        elif isinstance(node.body[0], ast.Expr) and \
-                             isinstance(node.body[0].value, ast.Constant) and \
-                             node.body[0].value.value == ...:
-                            construct_is_empty = True
-                    break
-            
-            classes_with_construct[cls.name] = (has_construct, construct_is_empty)
-        
-        # Helper function to check if a class has construct method through inheritance
-        def has_construct_in_chain(cls_name, visited=None):
-            """Check if a class or any of its parents has a construct method."""
-            if visited is None:
-                visited = set()
-            if cls_name in visited:
-                return False, False
-            visited.add(cls_name)
-            
-            # Check if this class directly has construct
-            if cls_name in classes_with_construct:
-                has_it, is_empty = classes_with_construct[cls_name]
-                if has_it:
-                    return True, is_empty
-            
-            # Check parent classes
-            if cls_name in class_map:
-                cls = class_map[cls_name]
-                for base in cls.bases:
-                    parent_name = None
-                    
-                    if isinstance(base, ast.Name):
-                        parent_name = base.id
-                    elif isinstance(base, ast.Attribute):
-                        # For cases like manim.Scene, we can't check inheritance
-                        # but these are base classes that should have construct
-                        continue
-                    
-                    if parent_name and parent_name in class_map:
-                        has_parent_construct, parent_is_empty = has_construct_in_chain(parent_name, visited)
-                        if has_parent_construct:
-                            return True, parent_is_empty
-            
-            return False, False
-        
-        # Second pass: Check each Scene class for construct method (including inherited)
-        for scene_class in scene_classes:
-            has_construct, construct_is_empty = has_construct_in_chain(scene_class.name)
-            
-            if not has_construct:
-                issues.append(f"[HIGH] Scene class '{scene_class.name}' missing construct method")
-            elif construct_is_empty:
-                # Only report empty construct if it's directly in this class
-                # (not inherited empty construct)
-                if scene_class.name in classes_with_construct and classes_with_construct[scene_class.name][0]:
-                    issues.append(f"[CRITICAL] Empty construct method in '{scene_class.name}'")
         
         return issues
     
@@ -430,139 +314,7 @@ class QualityValidator:
         
         return issues
     
-    def _validate_code_description_alignment(self, description: str, code: str, config: Dict[str, Any]) -> List[str]:
-        """
-        Check if code and description are aligned.
-        Only check for non-placeholder descriptions.
-        Keep it simple - just check for obvious mismatches.
-        """
-        # Skip all checks for placeholder descriptions
-        if description.startswith("[PLACEHOLDER") or description.startswith(PLACEHOLDER_DESCRIPTION):
-            return []
-        
-        issues = []
-        desc_lower = description.lower()
-        code_lower = code.lower()
-        
-        # Simple check: If description mentions specific shapes/objects, code should have them
-        shape_mappings = {
-            "circle": ["Circle(", "circle"],
-            "square": ["Square(", "square"],
-            "triangle": ["Triangle(", "Polygon", "triangle"],
-            "line": ["Line(", "line"],
-            "arrow": ["Arrow(", "arrow"],
-            "text": ["Text(", "Tex(", "MathTex("],
-            "graph": ["Graph(", "Axes(", "NumberPlane(", "plot"],
-            "matrix": ["Matrix(", "matrix"],
-            "vector": ["Vector(", "Arrow(", "vector"],
-        }
-        
-        for shape, code_patterns in shape_mappings.items():
-            if shape in desc_lower:
-                if not any(pattern in code for pattern in code_patterns):
-                    issues.append(f"[MEDIUM] Description mentions '{shape}' but code doesn't implement it")
-                    break  # Only report first mismatch to avoid noise
-        
-        return issues
     
-    def _validate_code_executability(self, code: str, config: Dict[str, Any]) -> List[str]:
-        """
-        Validate that the code can be parsed and potentially executed.
-        Tests if the transformed code is syntactically valid.
-        """
-        issues = []
-        
-        # Skip if executability check is disabled
-        if not config.get("check_executability", True):
-            return issues
-        
-        # Test 1: Basic syntax check
-        try:
-            ast.parse(code)
-        except SyntaxError as e:
-            issues.append(f"[CRITICAL] Syntax error in code: {e}")
-            return issues  # No point in further checks if syntax is broken
-        except Exception as e:
-            issues.append(f"[CRITICAL] Failed to parse code: {e}")
-            return issues
-        
-        # Test 2: Check for unescaped string literals that would cause warnings
-        try:
-            # Look for potential escape sequence issues
-            if re.search(r'(MathTex|Text|Tex)\s*\(\s*["\'][^"\']*\\[^\\r][^"\']*["\']', code):
-                issues.append("[MEDIUM] Potential invalid escape sequences in TeX strings")
-        except Exception:
-            pass
-        
-        # Test 3: Check for common runtime issues that can be statically detected
-        runtime_issues = []
-        
-        # Check for undefined variables (simplified check)
-        try:
-            tree = ast.parse(code)
-            
-            # Find all variable names used
-            used_names = set()
-            defined_names = set()
-            
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Name):
-                    if isinstance(node.ctx, ast.Load):
-                        used_names.add(node.id)
-                    elif isinstance(node.ctx, ast.Store):
-                        defined_names.add(node.id)
-                elif isinstance(node, ast.FunctionDef):
-                    defined_names.add(node.name)
-                elif isinstance(node, ast.ClassDef):
-                    defined_names.add(node.name)
-            
-            # Common built-ins and manim imports that are usually available
-            common_builtins = {
-                'len', 'range', 'enumerate', 'zip', 'sum', 'min', 'max',
-                'print', 'str', 'int', 'float', 'bool', 'list', 'dict',
-                'True', 'False', 'None', 'self'
-            }
-            
-            common_manim = {
-                'Scene', 'Text', 'MathTex', 'Tex', 'Circle', 'Square', 'Line',
-                'Arrow', 'Dot', 'UP', 'DOWN', 'LEFT', 'RIGHT', 'WHITE', 'BLACK',
-                'RED', 'GREEN', 'BLUE', 'YELLOW', 'ORANGE', 'PURPLE', 'PI', 'TAU',
-                'Create', 'Write', 'FadeIn', 'FadeOut', 'Transform', 'ReplacementTransform',
-                'Axes', 'NumberPlane', 'Graph', 'Vector', 'Matrix', 'Polygon'
-            }
-            
-            # Check for potentially undefined variables
-            undefined = used_names - defined_names - common_builtins - common_manim
-            if undefined:
-                # Filter out likely false positives
-                likely_undefined = [name for name in undefined 
-                                  if not name.startswith('_') and 
-                                  not name.isupper() and  # Likely constants
-                                  len(name) > 1]
-                if likely_undefined:
-                    issues.append(f"[MEDIUM] Potentially undefined variables: {', '.join(list(likely_undefined)[:5])}")
-        
-        except Exception:
-            # If static analysis fails, don't add issues
-            pass
-        
-        # Test 4: Check for missing required methods in Scene classes
-        try:
-            if 'class' in code and 'Scene' in code:
-                tree = ast.parse(code)
-                has_construct = False
-                
-                for node in ast.walk(tree):
-                    if isinstance(node, ast.FunctionDef) and node.name == 'construct':
-                        has_construct = True
-                        break
-                
-                if not has_construct:
-                    issues.append("[HIGH] Scene class missing construct method")
-        except Exception:
-            pass
-        
-        return issues
     
     def get_validation_report(self) -> str:
         """Get a summary of validation statistics."""

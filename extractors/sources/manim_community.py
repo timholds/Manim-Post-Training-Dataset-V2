@@ -230,6 +230,12 @@ class ManimCommunityExtractor(BaseExtractor):
                     len(node.args.args) > 0 and 
                     any(arg.arg == 'scene' for arg in node.args.args)):
                     
+                    # Detect Scene base class from decorator
+                    base_scene = self._detect_scene_base_class(content, node)
+                    
+                    # Extract function parameters for default values
+                    test_params = self._extract_test_parameters(content, node)
+                    
                     # Extract just this function's body
                     lines = content.splitlines()
                     func_start = node.lineno - 1
@@ -271,21 +277,27 @@ class ManimCommunityExtractor(BaseExtractor):
                     # Convert to Scene class
                     class_name = self._test_name_to_class_name(node.name)
                     
+                    # Add test parameter defaults at the beginning
+                    param_defaults = '\n'.join(f"        {param} = {default}" 
+                                              for param, default in test_params.items())
+                    if param_defaults:
+                        param_defaults = f"\n{param_defaults}\n"
+                    
                     # Indent for construct method
                     indented_body = '\n'.join(f"        {line}" if line.strip() else line
                                             for line in func_body.splitlines())
                     
-                    # Build Scene class
-                    class_code = f"""class {class_name}(Scene):
-    def construct(self):
+                    # Build Scene class with correct base class
+                    class_code = f"""class {class_name}({base_scene}):
+    def construct(self):{param_defaults}
 {indented_body}"""
                     
                     # Include imports (excluding test framework imports)
                     import_code = self._extract_imports(content)
                     full_code = f"{import_code}\n\n{class_code}"
                     
-                    # Clean up scene references
-                    full_code = full_code.replace('scene.', 'self.')
+                    # Clean up scene references using AST-aware replacement
+                    full_code = self._replace_scene_references(full_code)
                     
                     # Apply LaTeX transformations
                     full_code = self._transform_latex_code(full_code)
@@ -301,6 +313,63 @@ class ManimCommunityExtractor(BaseExtractor):
         """Convert test_function_name to TestFunctionName."""
         parts = test_name.split('_')
         return ''.join(part.capitalize() for part in parts)
+    
+    def _detect_scene_base_class(self, content: str, func_node: ast.FunctionDef) -> str:
+        """Detect the Scene base class from @frames_comparison decorator."""
+        lines = content.splitlines()
+        
+        # Look for decorator above the function
+        for i in range(max(0, func_node.lineno - 5), func_node.lineno - 1):
+            if i < len(lines):
+                line = lines[i].strip()
+                if '@frames_comparison' in line:
+                    # Extract base_scene parameter
+                    if 'base_scene=ThreeDScene' in line:
+                        return 'ThreeDScene'
+                    elif 'base_scene=VectorScene' in line:
+                        return 'VectorScene'
+                    elif 'base_scene=LinearTransformationScene' in line:
+                        return 'LinearTransformationScene'
+        
+        # Default to Scene if no specific base class found
+        return 'Scene'
+    
+    def _extract_test_parameters(self, content: str, func_node: ast.FunctionDef) -> dict:
+        """Extract test parameters and provide sensible defaults."""
+        params = {}
+        lines = content.splitlines()
+        
+        # Look for @pytest.mark.parametrize decorators
+        for i in range(max(0, func_node.lineno - 10), func_node.lineno - 1):
+            if i < len(lines):
+                line = lines[i].strip()
+                if '@pytest.mark.parametrize' in line and 'use_vectorized' in line:
+                    params['use_vectorized'] = 'True'
+        
+        # Check function body for undefined variables and provide defaults
+        func_source = ast.get_source_segment(content, func_node)
+        if func_source and 'use_vectorized' in func_source and 'use_vectorized' not in params:
+            params['use_vectorized'] = 'True'
+        
+        return params
+    
+    def _replace_scene_references(self, code: str) -> str:
+        """Replace scene. references with self. while preserving imports."""
+        lines = code.splitlines()
+        result_lines = []
+        
+        for line in lines:
+            # Don't replace 'scene' in import statements
+            if line.strip().startswith(('import', 'from')):
+                result_lines.append(line)
+            else:
+                # Replace scene. with self. in non-import lines
+                # Use word boundary to avoid replacing scene in other contexts
+                import re
+                modified_line = re.sub(r'\bscene\.', 'self.', line)
+                result_lines.append(modified_line)
+        
+        return '\n'.join(result_lines)
     
     def _create_description_with_context(self, class_name: str, file_path: Path, is_test: bool) -> str:
         """Create a placeholder description with context information."""

@@ -109,6 +109,9 @@ If ANY scene fails to render, investigate why before proceeding.
 
 ⚠️ **Gray Areas (Evaluate Case-by-Case)**
 - **Simple assets**: `ImageMobject("logo.png")` - Can potentially replace with shapes
+  - **Recommendation**: Try to avoid or filter scenes that heavily rely on custom assets (images, SVGs, audio files)
+  - **Why**: Training models with asset-dependent code creates challenges unless we teach the model to check asset existence
+  - **When OK**: If the asset is incidental and can be easily replaced with procedural graphics
 - **Helper functions**: Defined elsewhere in the repo - Can inline if reasonable
 - **Custom classes**: Extending Manim objects - Can inline if not too complex
 - **Data files**: Small CSV/JSON - Can hardcode data if reasonable
