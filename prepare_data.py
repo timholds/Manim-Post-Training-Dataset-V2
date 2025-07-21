@@ -309,16 +309,29 @@ def prepare_dataset(
             f.write(json.dumps(sample) + '\n')
     logger.info(f"Saved {len(valid_samples)} valid samples to {output_file} (filtered from {len(all_samples)} total)")
     
-    # Also save as individual deduplicated parquet files
+    # Save individual source parquet files
     import pandas as pd
-    logger.info(f"\n=== Saving Individual Deduplicated Parquets ===")
+    logger.info(f"\n=== Saving Individual Source Parquets ===")
+    
+    # Create sources directory
+    sources_dir = output_path / "sources"
+    sources_dir.mkdir(exist_ok=True)
+    
     for source_id in sources_to_process:
         source_samples = [s for s in valid_samples if s['source'] == source_id]
         if source_samples:
             df = pd.DataFrame(source_samples)
-            parquet_file = output_path / f"{source_id}_deduplicated.parquet"
+            parquet_file = sources_dir / f"{source_id}.parquet"
             df.to_parquet(parquet_file, index=False)
-            logger.info(f"Saved {len(df)} deduplicated samples for {source_id} to {parquet_file}")
+            logger.info(f"Saved {len(df)} validated samples for {source_id} to {parquet_file}")
+    
+    # Save final combined dataset
+    logger.info(f"\n=== Saving Final Combined Dataset ===")
+    if valid_samples:
+        combined_df = pd.DataFrame(valid_samples)
+        final_parquet = output_path / "manim_dataset_final.parquet"
+        combined_df.to_parquet(final_parquet, index=False)
+        logger.info(f"Saved {len(combined_df)} total samples to {final_parquet}")
     
     # Save statistics
     stats_file = output_path / "stats.json"
@@ -448,10 +461,12 @@ def main():
                 print(f"  - {source_id}: (error loading)")
         return
     
-    # Require sources if not listing
+    # If no sources specified, use all available sources
     if not args.sources:
-        parser.error("--sources is required when not using --list-sources")
-        return
+        registry = get_registry()
+        registry.auto_discover()
+        args.sources = registry.list_sources()
+        logger.info(f"No sources specified, using all available sources: {', '.join(args.sources)}")
     
     # Run pipeline
     prepare_dataset(

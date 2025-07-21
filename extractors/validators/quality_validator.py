@@ -174,46 +174,75 @@ class QualityValidator:
         if not has_imports:
             issues.append("[HIGH] Missing import statements")
         
-        # Simplified Scene class detection
-        scene_classes = []
-        has_construct = False
+        # Scene class detection with proper inheritance handling
+        classes = [node for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
+        class_map = {cls.name: cls for cls in classes}
         
-        for node in ast.walk(tree):
-            if isinstance(node, ast.ClassDef):
-                # Check if class inherits from Scene (simplified check)
-                is_scene = False
-                for base in node.bases:
-                    if isinstance(base, ast.Name) and ('Scene' in base.id):
-                        is_scene = True
-                        break
-                    elif isinstance(base, ast.Attribute) and ('Scene' in base.attr):
-                        is_scene = True
-                        break
+        # Known Scene classes (built-in and common)
+        known_scene_classes = {
+            'Scene', 'ThreeDScene', 'VoiceoverScene', 'MovingCameraScene',
+            'ZoomedScene', 'InteractiveScene', 'SampleSpaceScene', 'LiveStreamingScene',
+            'GraphScene', 'LinearTransformationScene', 'VectorScene', 'SpecialThreeDScene'
+        }
+        
+        def is_scene_class(cls):
+            """Check if a class inherits from Scene (handles multi-level inheritance)."""
+            for base in cls.bases:
+                # Direct inheritance check
+                if isinstance(base, ast.Name):
+                    base_name = base.id
+                    # Check if base is a known Scene class
+                    if base_name in known_scene_classes:
+                        return True
+                    # Check if base is another class in this file that might be a Scene
+                    if base_name in class_map:
+                        if is_scene_class(class_map[base_name]):
+                            return True
+                elif isinstance(base, ast.Attribute):
+                    # Module-qualified names like manim.Scene
+                    if base.attr in known_scene_classes:
+                        return True
+            return False
+        
+        # Find Scene classes and validate them
+        scene_classes = []
+        for cls in classes:
+            if is_scene_class(cls):
+                scene_classes.append(cls)
+        
+        # Only validate Scene classes that aren't base classes for other Scenes
+        # (i.e., the "leaf" Scene classes that should have construct methods)
+        base_scene_names = set()
+        for cls in scene_classes:
+            for base in cls.bases:
+                if isinstance(base, ast.Name) and base.id in class_map:
+                    base_scene_names.add(base.id)
+        
+        for cls in scene_classes:
+            # Skip Scene classes that are used as base classes by other Scenes
+            if cls.name in base_scene_names:
+                continue
                 
-                if is_scene:
-                    scene_classes.append(node)
+            # Check for construct method in non-base Scene classes
+            has_construct = False
+            construct_is_empty = False
+            
+            for method in cls.body:
+                if isinstance(method, ast.FunctionDef) and method.name == "construct":
+                    has_construct = True
                     
-                    # Check for construct method in this Scene class
-                    class_has_construct = False
-                    construct_is_empty = False
-                    
-                    for method in node.body:
-                        if isinstance(method, ast.FunctionDef) and method.name == "construct":
-                            class_has_construct = True
-                            has_construct = True
-                            
-                            # Check if construct is empty
-                            if (len(method.body) == 0 or 
-                                (len(method.body) == 1 and isinstance(method.body[0], ast.Pass)) or
-                                (len(method.body) == 1 and isinstance(method.body[0], ast.Expr) and 
-                                 isinstance(method.body[0].value, ast.Constant) and method.body[0].value.value == ...)):
-                                construct_is_empty = True
-                            break
-                    
-                    if not class_has_construct:
-                        issues.append(f"[HIGH] Scene class '{node.name}' missing construct method")
-                    elif construct_is_empty:
-                        issues.append(f"[CRITICAL] Empty construct method in '{node.name}'")
+                    # Check if construct is empty
+                    if (len(method.body) == 0 or 
+                        (len(method.body) == 1 and isinstance(method.body[0], ast.Pass)) or
+                        (len(method.body) == 1 and isinstance(method.body[0], ast.Expr) and 
+                         isinstance(method.body[0].value, ast.Constant) and method.body[0].value.value == ...)):
+                        construct_is_empty = True
+                    break
+            
+            if not has_construct:
+                issues.append(f"[HIGH] Scene class '{cls.name}' missing construct method")
+            elif construct_is_empty:
+                issues.append(f"[CRITICAL] Empty construct method in '{cls.name}'")
         
         if not scene_classes:
             issues.append("[CRITICAL] No Scene class found")

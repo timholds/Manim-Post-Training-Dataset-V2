@@ -161,7 +161,10 @@ class ReducibleExtractor(BaseExtractor):
             if isinstance(node, ast.Import):
                 for alias in node.names:
                     if not any(skip in alias.name for skip in skip_modules):
-                        imports.append(f"import {alias.name}")
+                        if alias.asname:
+                            imports.append(f"import {alias.name} as {alias.asname}")
+                        else:
+                            imports.append(f"import {alias.name}")
                     
             elif isinstance(node, ast.ImportFrom):
                 if node.module and not any(skip in node.module for skip in skip_modules):
@@ -309,13 +312,28 @@ class ReducibleExtractor(BaseExtractor):
         """Fix common API compatibility issues in the code"""
         import re
         
-        # Fix 1: CustomLabel scale parameter
+        # Fix 1: CustomLabel scale parameter (but not in class definitions)
         # Change: CustomLabel(str(k), scale=0.6) -> CustomLabel(str(k)).scale(0.6)
-        code = re.sub(
-            r'CustomLabel\((.*?),\s*scale\s*=\s*([\d.]+)\)',
-            r'CustomLabel(\1).scale(\2)',
-            code
-        )
+        # More precise: only skip the specific class definition line
+        lines = code.split('\n')
+        new_lines = []
+        in_custom_label_init = False
+        
+        for line in lines:
+            if 'class CustomLabel' in line:
+                in_custom_label_init = True
+            elif in_custom_label_init and 'def ' in line and 'def __init__' not in line:
+                in_custom_label_init = False
+            
+            if not in_custom_label_init:
+                line = re.sub(
+                    r'CustomLabel\((.*?),\s*scale\s*=\s*([\d.]+)\)',
+                    r'CustomLabel(\1).scale(\2)',
+                    line
+                )
+            new_lines.append(line)
+        
+        code = '\n'.join(new_lines)
         
         # Fix 2: Text weight parameter
         # Change: Text("...", weight=BOLD) -> Text("...", weight="BOLD")
@@ -377,7 +395,7 @@ class ReducibleExtractor(BaseExtractor):
             'import numpy as np',
             'import random',
             'from math import *',
-            'from typing import *',  # For Hashable and other type hints
+            'from typing import Hashable, Iterable, Optional, List, Dict, Tuple, Any',  # Import only what's needed
             ''
         ]
         
@@ -416,8 +434,8 @@ class ReducibleExtractor(BaseExtractor):
             if scene_uses_markov:
                 parts.append('# MarkovChain classes from same file')
                 tree = ast.parse(full_content)
-                # Also need to extract CustomLabel which is defined in markov_chain.py
-                classes_to_extract = ['MarkovChain', 'MarkovChainGraph', 'MarkovChainSimulator', 'CustomLabel']
+                # Also need to extract CustomLabel and CustomCurvedArrow which are defined in markov_chain.py
+                classes_to_extract = ['MarkovChain', 'MarkovChainGraph', 'MarkovChainSimulator', 'CustomLabel', 'CustomCurvedArrow']
                 for node in tree.body:
                     if isinstance(node, ast.ClassDef) and node.name in classes_to_extract:
                         class_code = ast.get_source_segment(full_content, node)
@@ -499,17 +517,24 @@ REDUCIBLE_MONO = "SF Mono"'''
                     content = f.read()
                 # Extract just the class definitions we need
                 tree = ast.parse(content)
-                classes_to_extract = ['MarkovChain', 'MarkovChainGraph', 'MarkovChainSimulator']
+                classes_to_extract = ['MarkovChain', 'MarkovChainGraph', 'MarkovChainSimulator', 'CustomLabel', 'CustomCurvedArrow']
                 extracted_code = []
+                
+                # First add necessary imports for MarkovChain classes
+                extracted_code.append("import itertools as it")
+                extracted_code.append("from typing import Hashable, Iterable")
+                extracted_code.append("")
                 
                 for node in tree.body:
                     if isinstance(node, ast.ClassDef) and node.name in classes_to_extract:
                         class_code = ast.get_source_segment(content, node)
                         if class_code:
+                            # Apply fixes to extracted classes
+                            class_code = self._fix_common_issues(class_code)
                             extracted_code.append(class_code)
                 
                 if extracted_code:
-                    return '\n\n'.join(extracted_code)
+                    return '\n'.join(extracted_code)
         
         elif module_name == "classes":
             # Extract RVariable, RDecimalNumber, and CustomLabel from common/classes.py

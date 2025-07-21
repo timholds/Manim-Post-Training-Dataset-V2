@@ -66,11 +66,11 @@ python prepare_data.py --source manimbench
 
 The script will:
 1. Extract examples from each source
-2. Validate examples (structure and optionally render validation)
-3. Deduplicate within each source
-4. Save individual datasets to `data/processed/`
-5. Create merged dataset in `data/final/`
-6. Generate statistics in `data/metadata/`
+2. Deduplicate samples based on normalized code
+3. Optionally render videos to validate code
+4. Save individual validated datasets to `outputs/sources/`
+5. Create final combined dataset at `outputs/manim_dataset_final.parquet`
+6. Generate statistics in `outputs/stats.json`
 
 ### Enhance with LLM Descriptions (Optional)
 
@@ -106,16 +106,26 @@ manim-post-training-dataset-v2/
 │   ├── utils.py            # Shared utilities (normalization, etc)
 │   └── sources/            # Individual data source extractors
 │       ├── manimbench.py   # ManimBench dataset extractor
-│       └── manim_ce_docs.py # Manim CE documentation extractor
-├── data/                    # Output directory (created by script)
-│   ├── processed/          # Individual validated datasets
+│       ├── manim_ce_docs.py # Manim CE documentation extractor
+│       ├── manim_community.py # Manim Community examples
+│       ├── beethoven.py    # Elteoremadebeethoven tutorials
+│       ├── reducible.py    # Reducible YouTube channel
+│       └── reducible_fixed.py # Pre-fixed Reducible samples
+├── outputs/                 # Output directory (created by script)
+│   ├── sources/            # Individual validated datasets
 │   │   ├── manimbench.parquet
-│   │   └── manim_ce_docs.parquet
-│   ├── final/              # Merged dataset
-│   │   └── manim_combined.parquet
-│   └── metadata/           # Statistics and duplicate info
-│       ├── dataset_stats.json
-│       └── cross_duplicates.json
+│   │   ├── manim_ce_docs.parquet
+│   │   ├── manim_community.parquet
+│   │   ├── beethoven.parquet
+│   │   ├── reducible.parquet
+│   │   └── reducible_fixed.parquet
+│   ├── manim_dataset_final.parquet  # Combined dataset
+│   ├── dataset.jsonl       # JSONL format output
+│   └── stats.json          # Statistics and metrics
+├── rendered_videos/        # Rendered validation videos (if enabled)
+│   ├── manimbench/
+│   ├── manim_ce_docs/
+│   └── ...
 ```
 
 ## Adding New Data Sources
@@ -153,5 +163,31 @@ See the [Adding New Data Sources](docs/migration_guide.md) guide for detailed in
 
 See the [Development Roadmap](docs/ROADMAP.md) for priority datasets to add. The plugin-based architecture makes it easy to contribute new data sources.
 
+## Output Files
+
+The pipeline produces several output files:
+
+### Individual Source Files (`outputs/sources/`)
+Each source gets its own parquet file containing:
+- Samples that passed extraction and validation
+- Deduplicated within that source
+- Only successful renders (if `--render-videos` was used)
+
+### Combined Dataset (`outputs/manim_dataset_final.parquet`)
+- Merges all individual source files
+- Cross-source deduplication applied
+- Ready for training or fine-tuning
+
+### Statistics (`outputs/stats.json`)
+Detailed metrics including:
+- Sample counts at each stage
+- Deduplication statistics
+- Render success rates
+- Output format distribution (MP4 vs PNG)
+
 ## Deduplication Strategy
-Besides rows that have a placeholder for the description that an LLM will fill in later, all descriptions must be unique. When we find two or more rows with the same description, we keep the one with the highest priority source. 
+The pipeline uses normalized code comparison for deduplication:
+- Within each source first
+- Then across sources when creating the combined dataset
+- Code is normalized to ignore formatting differences
+- Original code formatting is preserved in the output
