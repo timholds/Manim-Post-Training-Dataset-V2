@@ -124,6 +124,10 @@ manim-post-training-dataset-v2/
 │   ├── manimbench/
 │   ├── manim_ce_docs/
 │   └── ...
+├── code_samples/           # Python source files for each sample (matches rendered_videos structure)
+│   ├── manimbench/
+│   ├── manim_ce_docs/
+│   └── ...
 ```
 
 ## Adding New Data Sources

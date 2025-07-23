@@ -19,14 +19,14 @@ from extractors.utils import normalize_code
 # Source priorities - lower number = higher priority
 # Sources with meaningful descriptions should have higher priority
 SOURCE_PRIORITIES = {
-    'manimbench': 1,        # Has meaningful descriptions
-    'reducible': 2,         # High quality educational content
-    'beethoven': 3,         # Community content
-    'manim_repository': 4,  # Official examples
-    'manim_community': 5,   # Community examples
-    'dan4life': 6,          # Individual creator
-    'bespoke_labs': 7,      # External content
-    'manim_ce_docs': 8,     # Documentation examples (often minimal)
+    'manimbench': 1,        # Reviewed descriptions + clean code
+    'reducible': 2,         # Professional educational content
+    'dan4life': 2,          # High-quality algorithm visualizations
+    'beethoven': 3,         # Tutorial series with descriptions
+    'manim_repository': 3,  # Curated blog examples
+    'bespoke_labs': 4,      # Academic but potentially synthetic
+    'manim_community': 4,   # Basic examples and tests
+    'manim_ce_docs': 5,     # Minimal documentation examples
 }
 
 # Configure logging
@@ -283,13 +283,6 @@ def prepare_dataset(
             for idx, sample in enumerate(tqdm(source_samples, desc=f"Rendering {source_id}")):
                 video_path = video_dir / f"{idx:04d}.mp4"
                 
-                # Save the code sample
-                code_dir = Path("code_samples") / source_id
-                code_dir.mkdir(parents=True, exist_ok=True)
-                code_path = code_dir / f"{idx:04d}.py"
-                with open(code_path, 'w') as f:
-                    f.write(sample['code'])
-                
                 # Skip if video/image exists and caching is enabled
                 if not no_cached_videos:
                     if video_path.exists():
@@ -302,6 +295,13 @@ def prepare_dataset(
                         source_stats[source_id]['png_count'] += 1
                         valid_samples.append(sample)
                         continue
+                
+                # Save the code sample (only when actually rendering)
+                code_dir = Path("code_samples") / source_id
+                code_dir.mkdir(parents=True, exist_ok=True)
+                code_path = code_dir / f"{idx:04d}.py"
+                with open(code_path, 'w') as f:
+                    f.write(sample['code'])
                 
                 # Render the video
                 success, error = render_video(sample, video_path, timeout=timeout * 4)  # 4x timeout for videos
