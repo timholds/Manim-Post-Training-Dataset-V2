@@ -16,6 +16,19 @@ from tqdm import tqdm
 from extractors import get_registry
 from extractors.utils import normalize_code
 
+# Source priorities - lower number = higher priority
+# Sources with meaningful descriptions should have higher priority
+SOURCE_PRIORITIES = {
+    'manimbench': 1,        # Has meaningful descriptions
+    'reducible': 2,         # High quality educational content
+    'beethoven': 3,         # Community content
+    'manim_repository': 4,  # Official examples
+    'manim_community': 5,   # Community examples
+    'dan4life': 6,          # Individual creator
+    'bespoke_labs': 7,      # External content
+    'manim_ce_docs': 8,     # Documentation examples (often minimal)
+}
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -26,29 +39,48 @@ logger = logging.getLogger(__name__)
 
 def deduplicate_samples(samples: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
     """
-    Remove duplicate samples based on normalized code comparison.
-    Uses normalize_code to ignore formatting differences while preserving original code.
+    Remove duplicate samples based on normalized code comparison using source priorities.
+    Uses a two-pass approach to ensure deterministic results regardless of input order.
     Returns (deduplicated_samples, duplicate_counts_by_source).
     """
-    seen_normalized = {}  # Maps normalized code -> first sample
-    deduplicated = []
-    duplicate_counts = {}
+    # Pass 1: Group samples by normalized code
+    code_groups = {}  # Maps normalized code -> list of samples
     
     for sample in samples:
         code = sample['code']
-        source = sample['source']
-        
-        # Normalize code for comparison only
         normalized = normalize_code(code)
         
-        if normalized not in seen_normalized:
-            seen_normalized[normalized] = sample
-            deduplicated.append(sample)  # Keep original code
+        if normalized not in code_groups:
+            code_groups[normalized] = []
+        code_groups[normalized].append(sample)
+    
+    # Pass 2: Select best sample from each group based on priority
+    deduplicated = []
+    duplicate_counts = {}
+    
+    for normalized_code, sample_group in code_groups.items():
+        if len(sample_group) == 1:
+            # No duplicates, keep the sample
+            deduplicated.append(sample_group[0])
         else:
-            # Track which source had the duplicate
-            if source not in duplicate_counts:
-                duplicate_counts[source] = 0
-            duplicate_counts[source] += 1
+            # Multiple samples with same code - select based on priority
+            # Sort by priority (lower number = higher priority)
+            sorted_samples = sorted(sample_group, 
+                                  key=lambda s: SOURCE_PRIORITIES.get(s['source'], float('inf')))
+            
+            # Keep the highest priority sample
+            winner = sorted_samples[0]
+            deduplicated.append(winner)
+            
+            # Count duplicates for other sources
+            for sample in sorted_samples[1:]:
+                source = sample['source']
+                if source not in duplicate_counts:
+                    duplicate_counts[source] = 0
+                duplicate_counts[source] += 1
+    
+    # Sort deduplicated samples to ensure deterministic output
+    deduplicated.sort(key=lambda s: (s['source'], s.get('description', '')))
     
     return deduplicated, duplicate_counts
 
@@ -203,7 +235,7 @@ def prepare_dataset(
         deduplicated_samples = all_samples
         duplicate_counts = {}
     else:
-        logger.info(f"\n=== Deduplicating Samples (using normalized code comparison) ===")
+        logger.info(f"\n=== Deduplicating Samples (using priority-based normalized code comparison) ===")
         deduplicated_samples, duplicate_counts = deduplicate_samples(all_samples)
         
         # Update stats with deduplication info
@@ -214,8 +246,10 @@ def prepare_dataset(
         logger.info(f"Removed {total_duplicates} duplicates, {len(deduplicated_samples)} unique samples remain")
         
         if duplicate_counts:
-            for source_id, count in duplicate_counts.items():
-                logger.info(f"  {source_id}: {count} duplicates removed")
+            logger.info("Duplicates removed by source (lost to higher priority sources):")
+            for source_id, count in sorted(duplicate_counts.items()):
+                priority = SOURCE_PRIORITIES.get(source_id, 'unknown')
+                logger.info(f"  {source_id} (priority {priority}): {count} duplicates removed")
     
     # Video rendering and filtering
     valid_samples = []
@@ -248,6 +282,13 @@ def prepare_dataset(
             # Render each sample
             for idx, sample in enumerate(tqdm(source_samples, desc=f"Rendering {source_id}")):
                 video_path = video_dir / f"{idx:04d}.mp4"
+                
+                # Save the code sample
+                code_dir = Path("code_samples") / source_id
+                code_dir.mkdir(parents=True, exist_ok=True)
+                code_path = code_dir / f"{idx:04d}.py"
+                with open(code_path, 'w') as f:
+                    f.write(sample['code'])
                 
                 # Skip if video/image exists and caching is enabled
                 if not no_cached_videos:
