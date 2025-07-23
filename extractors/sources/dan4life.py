@@ -1,4 +1,4 @@
-"""Dan4Life Advent of Code 2024 dataset extractor - downloads from Kaggle."""
+"""Dan4Life AOC 2024 dataset extractor - downloads from Kaggle."""
 
 import json
 import logging
@@ -16,25 +16,25 @@ logger = logging.getLogger(__name__)
 
 @register_extractor
 class Dan4LifeExtractor(BaseExtractor):
-    """Extractor for Dan4Life's Advent of Code 2024 Manim solutions from Kaggle."""
+    """Extractor for Dan4Life AOC 2024 dataset from Kaggle."""
     
     source_id = "dan4life"
-    source_name = "Dan4Life AOC 2024"
-    priority = 4  # Medium-high priority as it's AoC solutions
+    source_name = "Dan4Life AOC 2024 Dataset"
+    priority = 4  # Medium-high priority
     
     def _validate_config(self) -> None:
         """Validate configuration."""
         self.data_dir = Path(self.config.get("data_dir", "raw"))
         self.dataset_dir = self.data_dir / "dan4life"
-        self.dataset_file = self.dataset_dir / "dan4life_aoc2024.parquet"
+        self.dataset_file = self.dataset_dir / "dan4life_aoc2024_cleaned.parquet"
     
     def estimate_sample_count(self) -> Optional[int]:
         """Return estimated number of samples."""
-        # We'll return None until we know the actual count
+        # We don't know the exact count yet
         return None
     
     def _download_dataset(self) -> bool:
-        """Download dan4life dataset from Kaggle if needed."""
+        """Download Dan4Life dataset from Kaggle if needed."""
         # Create data directory if it doesn't exist
         self.dataset_dir.mkdir(parents=True, exist_ok=True)
         
@@ -45,12 +45,13 @@ class Dan4LifeExtractor(BaseExtractor):
             
         try:
             # Download using Kaggle API
-            logger.info("Downloading dan4life AOC 2024 dataset from Kaggle...")
+            logger.info("Downloading Dan4Life AOC 2024 dataset from Kaggle...")
             cmd = [
                 "kaggle", "datasets", "download",
                 "-d", "timholdsworth/manim-bench-cleaned",
-                "-f", "dan4life_aoc2024.parquet",
-                "-p", str(self.dataset_dir)
+                "-f", "dan4life_aoc2024_cleaned.parquet",
+                "-p", str(self.dataset_dir),
+                "--unzip"
             ]
             
             result = subprocess.run(cmd, capture_output=True, text=True)
@@ -63,15 +64,7 @@ class Dan4LifeExtractor(BaseExtractor):
                 
             logger.info("Dataset downloaded successfully")
             
-            # The file might be in a zip, let's check
-            zip_file = self.dataset_dir / "dan4life_aoc2024.parquet.zip"
-            if zip_file.exists():
-                import zipfile
-                with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-                    zip_ref.extractall(self.dataset_dir)
-                zip_file.unlink()  # Remove the zip file
-            
-            # Check if parquet file exists
+            # Check if the expected file exists after download
             if not self.dataset_file.exists():
                 logger.error("Expected parquet file not found after download")
                 return False
@@ -83,47 +76,59 @@ class Dan4LifeExtractor(BaseExtractor):
             return False
     
     def extract(self) -> Iterator[Dict[str, Any]]:
-        """Extract samples from dan4life AOC 2024 dataset."""
+        """Extract samples from Dan4Life AOC 2024 dataset."""
         # Download dataset if needed
         if not self._download_dataset():
-            logger.error("Failed to download dan4life dataset")
+            logger.error("Failed to download Dan4Life dataset")
             return
             
         try:
             # Read parquet file
             df = pd.read_parquet(self.dataset_file)
-            logger.info(f"Loaded {len(df)} samples from dan4life AOC 2024 dataset")
+            logger.info(f"Loaded {len(df)} samples from Dan4Life AOC 2024 dataset")
             
             # Process each row in the dataframe
             for idx, row in df.iterrows():
-                # We need to check what columns are available in the parquet file
-                # Common patterns might be: description, code, prompt, solution, etc.
-                # For now, let's assume it has similar structure to ManimBench
+                # Extract data from columns - need to check actual column names
+                # Based on typical AOC datasets, might have columns like: problem, solution, code, etc.
                 
-                # Try different column names for description
+                # First, let's see what columns are available
+                if idx == 0:
+                    logger.info(f"Available columns: {list(df.columns)}")
+                
+                # Try to get description/problem statement
                 description = None
-                for desc_col in ['description', 'Description', 'prompt', 'Prompt', 'problem', 'Problem']:
-                    if desc_col in row:
-                        description = row[desc_col]
-                        break
-                
-                # Try different column names for code
+                if 'description' in df.columns:
+                    description = row['description']
+                elif 'problem' in df.columns:
+                    description = row['problem']
+                elif 'prompt' in df.columns:
+                    description = row['prompt']
+                elif 'task' in df.columns:
+                    description = row['task']
+                    
+                # Try to get code
                 code = None
-                for code_col in ['code', 'Code', 'solution', 'Solution', 'manim_code', 'Manim Code']:
-                    if code_col in row:
-                        code = row[code_col]
-                        break
+                if 'code' in df.columns:
+                    code = row['code']
+                elif 'solution' in df.columns:
+                    code = row['solution']
+                elif 'implementation' in df.columns:
+                    code = row['implementation']
                 
-                # If we still don't have description/code, log available columns and skip
+                # If we couldn't find standard columns, use the first text column as description
+                # and second as code
                 if description is None or code is None:
-                    if idx == 0:  # Only log once
-                        logger.warning(f"Available columns: {list(row.index)}")
-                    logger.warning(f"Item {idx}: Missing description or code")
-                    continue
+                    text_columns = [col for col in df.columns if df[col].dtype == 'object']
+                    if len(text_columns) >= 2:
+                        if description is None:
+                            description = row[text_columns[0]]
+                        if code is None:
+                            code = row[text_columns[1]]
                 
                 # Validate we have both description and code
                 if not description or not code:
-                    logger.warning(f"Item {idx}: Empty description or code")
+                    logger.warning(f"Item {idx}: Missing description or code")
                     continue
                     
                 # Basic validation that it's Manim code
@@ -135,17 +140,17 @@ class Dan4LifeExtractor(BaseExtractor):
                 metadata = {
                     "dataset_file": str(self.dataset_file),
                     "item_index": idx,
-                    "source": "Advent of Code 2024"
+                    "source": "dan4life_aoc2024"
                 }
                 
-                # Add any additional columns as metadata
-                for col in row.index:
-                    if col not in ['description', 'Description', 'code', 'Code', 'prompt', 'Prompt', 'solution', 'Solution']:
-                        metadata[col] = row[col]
+                # Add any additional columns to metadata
+                for col in df.columns:
+                    if col not in ['description', 'problem', 'prompt', 'task', 'code', 'solution', 'implementation']:
+                        metadata[col] = row.get(col)
                 
                 yield {
-                    "description": description.strip(),
-                    "code": code,  # Keep code exactly as is, no stripping
+                    "description": str(description).strip(),
+                    "code": str(code),  # Keep code exactly as is, no stripping
                     "metadata": metadata
                 }
                     

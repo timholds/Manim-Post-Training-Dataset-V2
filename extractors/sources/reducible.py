@@ -22,7 +22,7 @@ class ReducibleExtractor(BaseExtractor):
     """Extracts asset-free scenes from the Reducible dataset"""
     
     source_id = "reducible"
-    source_name = "Reducible YouTube Channel"
+    source_name = "Reducible - Advanced Algorithm Visualizations (Marching Squares, PageRank, Markov Chains)"
     priority = 8  # High priority for quality educational content
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):

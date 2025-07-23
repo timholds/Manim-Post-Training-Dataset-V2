@@ -27,12 +27,9 @@ This document describes the available datasets and any source-specific processin
 - Fix API compatibility issues between older Manim versions and current ManimCE
 
 ### Idiosyncrasies
-- High-quality educational animations from the Reducible YouTube channel
 - ~51% of scenes are asset-free and suitable for extraction (38 out of 74 ManimCE scenes)
-- ~42% of extracted scenes render successfully with automatic fixes (16 out of 38)
 - Many scenes have inter-dependencies requiring module inlining
 - Utility base classes (ending with "Utils") are skipped as they're not meant to be rendered directly
-- Contains mix of animated scenes (MP4) and static visualizations (PNG)
 - Required fixes for common API changes:
   - Color interpolation (string colors need ManimColor wrapper)
   - Title scale_factor parameter (deprecated, use .scale() method)
@@ -43,6 +40,17 @@ This document describes the available datasets and any source-specific processin
   - Import fixes (scipy.sqrt → numpy.sqrt)
 - Remaining rendering issues primarily in PageRank scenes involving complex MarkovChain visualizations
 
+## Evaluated but Not Included
+
+### generaleoley/manim-codegen (HuggingFace)
+- Evaluated 1/2025: 26% query/answer mismatch rate where code doesn't match the requested animation
+- Contains mostly repetitive integral/calculus examples (30% of dataset) with generic scene names
+- Evidence of poor automated generation without validation - not suitable for training
+
+### thanhkt/manim_code (HuggingFace)
+- Evaluated 1/2025: 96% of samples have critical issues (only 4% usable)
+- 63% contain syntax errors with mysterious 'n' prefix, 21% have LLM artifacts (</s>, <|endoftext|>)
+- Appears to be poorly post-processed synthetic data without validation - code quality too low for training
 
 
 ## Notes for Adding New Sources

@@ -1,0 +1,84 @@
+[
+  {
+    "index": 2,
+    "scene_name": "scene_2",
+    "file_path": "",
+    "issues": [
+      "Minimal construct method (3 lines)"
+    ],
+    "code_snippet": "# Standard imports\nfrom manim import *\nimport numpy as np\nimport random\nfrom math import *\nfrom typing import Hashable, Iterable, Optional, List, Dict, Tuple, Any\n\n# MarchingSquares color constants\nINSIDE_COLOR = PURE_GREEN\nOUTSIDE_COLOR = BLUE\nCONTOUR_COLOR = YELLOW\n\nfrom math import floor\nimport random\nimport itertools\nimport time\n\n# Scene class\nclass CirclesAndEllipses(Scene):\n    def construct(self):\n        self.plane = NumberPlane()\n        self.add(self.plane)\n\n        self.show_circle_an..."
+  },
+  {
+    "index": 4,
+    "scene_name": "scene_4",
+    "file_path": "",
+    "issues": [
+      "Minimal construct method (1 lines)"
+    ],
+    "code_snippet": "# Standard imports\nfrom manim import *\nimport numpy as np\nimport random\nfrom math import *\nfrom typing import Hashable, Iterable, Optional, List, Dict, Tuple, Any\n\n# MarchingSquares color constants\nINSIDE_COLOR = PURE_GREEN\nOUTSIDE_COLOR = BLUE\nCONTOUR_COLOR = YELLOW\n\nfrom math import floor\nimport random\nimport itertools\nimport time\n\n# Scene class\nclass ImplicitFunctionCases(Scene):\n    def construct(self):\n        self.show_cases()\n        \n    def show_cases(self):\n        A, B = self.show_fir..."
+  },
+  {
+    "index": 5,
+    "scene_name": "scene_5",
+    "file_path": "",
+    "issues": [
+      "Minimal construct method (1 lines)",
+      "Empty construct method"
+    ],
+    "code_snippet": "# Standard imports\nfrom manim import *\nimport numpy as np\nimport random\nfrom math import *\nfrom typing import Hashable, Iterable, Optional, List, Dict, Tuple, Any\n\n# MarchingSquares color constants\nINSIDE_COLOR = PURE_GREEN\nOUTSIDE_COLOR = BLUE\nCONTOUR_COLOR = YELLOW\n\nfrom math import floor\nimport random\nimport itertools\nimport time\n\n# Base classes\nclass MarchingSquaresUtils(Scene):\n    # Utilities class for performing marching squares\n    def construct(self):\n        pass\n\n    def set_sample_sp..."
+  },
+  {
+    "index": 6,
+    "scene_name": "scene_6",
+    "file_path": "",
+    "issues": [
+      "Minimal construct method (2 lines)"
+    ],
+    "code_snippet": "# Standard imports\nfrom manim import *\nimport numpy as np\nimport random\nfrom math import *\nfrom typing import Hashable, Iterable, Optional, List, Dict, Tuple, Any\n\n# MarchingSquares color constants\nINSIDE_COLOR = PURE_GREEN\nOUTSIDE_COLOR = BLUE\nCONTOUR_COLOR = YELLOW\n\nfrom math import floor\nimport random\nimport itertools\nimport time\n\n# Scene class\nclass MarchingSquaresCases(Scene):\n    def construct(self):\n        all_cases_in_grid = self.introduce_cases()\n\n        self.organize_cases(all_cases_..."
+  },
+  {
+    "index": 7,
+    "scene_name": "scene_7",
+    "file_path": "",
+    "issues": [
+      "Minimal construct method (2 lines)"
+    ],
+    "code_snippet": "# Standard imports\nfrom manim import *\nimport numpy as np\nimport random\nfrom math import *\nfrom typing import Hashable, Iterable, Optional, List, Dict, Tuple, Any\n\n# MarchingSquares color constants\nINSIDE_COLOR = PURE_GREEN\nOUTSIDE_COLOR = BLUE\nCONTOUR_COLOR = YELLOW\n\nfrom math import floor\nimport random\nimport itertools\nimport time\n\n# Scene class\nclass LerpImprovement(Scene):\n    def construct(self):\n        dots, label_classes, title, case_square = self.remind_big_picture()\n        self.motiva..."
+  },
+  {
+    "index": 9,
+    "scene_name": "scene_9",
+    "file_path": "",
+    "issues": [
+      "Minimal construct method (1 lines)"
+    ],
+    "code_snippet": "# Standard imports\nfrom manim import *\nimport numpy as np\nimport random\nfrom math import *\nfrom typing import Hashable, Iterable, Optional, List, Dict, Tuple, Any\n\n# MarchingSquares color constants\nINSIDE_COLOR = PURE_GREEN\nOUTSIDE_COLOR = BLUE\nCONTOUR_COLOR = YELLOW\n\nfrom math import floor\nimport random\nimport itertools\nimport time\n\n# Scene class\nclass OverlayMarchingCubes(Scene):\n    def construct(self):\n        self.make_text_overlays() \n\n    def make_text_overlays(self):\n        first_resolu..."
+  },
+  {
+    "index": 18,
+    "scene_name": "scene_18",
+    "file_path": "",
+    "issues": [
+      "Minimal construct method (3 lines)"
+    ],
+    "code_snippet": "# Standard imports\nfrom manim import *\nimport numpy as np\nimport random\nfrom math import *\nfrom typing import Hashable, Iterable, Optional, List, Dict, Tuple, Any\n\nimport sys\nfrom typing import Hashable, Iterable\nimport numpy as np\nimport itertools as it\n\n# Dependencies from common modules\n# From reducible_colors.py:\n# Color definitions\nREDUCIBLE_PURPLE_DARK_FILL = \"#331B5D\"\nREDUCIBLE_PURPLE_DARKER = \"#3B0893\"\nREDUCIBLE_PURPLE = \"#8c4dfb\"\nREDUCIBLE_VIOLET = \"#d7b5fe\"\nREDUCIBLE_BLUE = \"#650FFA\"\nR..."
+  },
+  {
+    "index": 22,
+    "scene_name": "scene_22",
+    "file_path": "",
+    "issues": [
+      "Minimal construct method (1 lines)"
+    ],
+    "code_snippet": "# Standard imports\nfrom manim import *\nimport numpy as np\nimport random\nfrom math import *\nfrom typing import Hashable, Iterable, Optional, List, Dict, Tuple, Any\n\nimport sys\nfrom typing import Hashable, Iterable\nimport numpy as np\nimport itertools as it\n\n# Dependencies from common modules\n# From reducible_colors.py:\n# Color definitions\nREDUCIBLE_PURPLE_DARK_FILL = \"#331B5D\"\nREDUCIBLE_PURPLE_DARKER = \"#3B0893\"\nREDUCIBLE_PURPLE = \"#8c4dfb\"\nREDUCIBLE_VIOLET = \"#d7b5fe\"\nREDUCIBLE_BLUE = \"#650FFA\"\nR..."
+  },
+  {
+    "index": 25,
+    "scene_name": "scene_25",
+    "file_path": "",
+    "issues": [
+      "Minimal construct method (2 lines)"
+    ],
+    "code_snippet": "# Standard imports\nfrom manim import *\nimport numpy as np\nimport random\nfrom math import *\nfrom typing import Hashable, Iterable, Optional, List, Dict, Tuple, Any\n\nimport sys\nfrom typing import Hashable, Iterable\nimport numpy as np\nimport itertools as it\n\n# Dependencies from common modules\n# From reducible_colors.py:\n# Color definitions\nREDUCIBLE_PURPLE_DARK_FILL = \"#331B5D\"\nREDUCIBLE_PURPLE_DARKER = \"#3B0893\"\nREDUCIBLE_PURPLE = \"#8c4dfb\"\nREDUCIBLE_VIOLET = \"#d7b5fe\"\nREDUCIBLE_BLUE = \"#650FFA\"\nR..."
+  }
+]

@@ -1,0 +1,170 @@
+{
+  "total_scenes": 36,
+  "scenes_to_remove": [
+    2,
+    4,
+    5,
+    6,
+    7,
+    9,
+    12,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34
+  ],
+  "scenes_to_keep": [
+    0,
+    1,
+    3,
+    8,
+    10,
+    11,
+    13,
+    14,
+    26,
+    27,
+    35
+  ],
+  "removal_details": {
+    "7": {
+      "reason": "Failed to render",
+      "scene_name": "scene_7",
+      "description": "Visualize linear interpolation for contour finding in computational geometry. Demonstrate how to app..."
+    },
+    "15": {
+      "reason": "Failed to render",
+      "scene_name": "scene_15",
+      "description": "Visualize how eigenvalues and eigenvectors are used to find the stationary distribution of a Markov ..."
+    },
+    "16": {
+      "reason": "Failed to render",
+      "scene_name": "scene_16",
+      "description": "Show how to compare three different approaches for computing PageRank stationary distributions. Crea..."
+    },
+    "17": {
+      "reason": "Failed to render",
+      "scene_name": "scene_17",
+      "description": "Create an animation that demonstrates Markov chain convergence using a graph with animated user simu..."
+    },
+    "18": {
+      "reason": "Failed to render",
+      "scene_name": "scene_18",
+      "description": "Create an animation that introduces the concept of web page connectivity using a large network graph..."
+    },
+    "19": {
+      "reason": "Failed to render",
+      "scene_name": "scene_19",
+      "description": "Create an animation that introduces Markov chains in the context of PageRank, starting with a title ..."
+    },
+    "20": {
+      "reason": "Failed to render",
+      "scene_name": "scene_20",
+      "description": "Create an animation that introduces Markov chains using a directed state graph with probability tran..."
+    },
+    "21": {
+      "reason": "Failed to render",
+      "scene_name": "scene_21",
+      "description": "Show how to measure relative importance of states in a Markov chain through visual ranking compariso..."
+    },
+    "22": {
+      "reason": "Failed to render",
+      "scene_name": "scene_22",
+      "description": "Create an animation that demonstrates how a Markov chain converges to its stationary distribution. S..."
+    },
+    "23": {
+      "reason": "Failed to render",
+      "scene_name": "scene_23",
+      "description": "Show how to introduce the concept of stationary distributions in Markov chains by presenting three k..."
+    },
+    "24": {
+      "reason": "Failed to render",
+      "scene_name": "scene_24",
+      "description": "Create an animation that demonstrates Markov chain probability distributions evolving over time. Vis..."
+    },
+    "25": {
+      "reason": "Failed to render",
+      "scene_name": "scene_25",
+      "description": "Create an animation that demonstrates the uniqueness theorem for Markov chain stationary distributio..."
+    },
+    "28": {
+      "reason": "Failed to render",
+      "scene_name": "scene_28",
+      "description": "Create an animation that demonstrates periodicity in Markov chains using a two-state system. Visuali..."
+    },
+    "29": {
+      "reason": "Failed to render",
+      "scene_name": "scene_29",
+      "description": "Show how to introduce the Ergodic Theorem for Markov chains with clear mathematical presentation. Cr..."
+    },
+    "30": {
+      "reason": "Failed to render",
+      "scene_name": "scene_30",
+      "description": "Looking at this Manim code, I can see it's a very minimal scene that only displays a text question a..."
+    },
+    "31": {
+      "reason": "Failed to render",
+      "scene_name": "scene_31",
+      "description": "Looking at this Manim code, I can see it's the beginning of a PageRank explanation that introduces t..."
+    },
+    "32": {
+      "reason": "Failed to render",
+      "scene_name": "scene_32",
+      "description": "Show how to find the stationary distribution of a Markov chain using the eigenvalue method. Demonstr..."
+    },
+    "33": {
+      "reason": "Failed to render",
+      "scene_name": "scene_33",
+      "description": "Show how to introduce the fundamental connection between eigenvalues/eigenvectors and long-term syst..."
+    },
+    "34": {
+      "reason": "Failed to render",
+      "scene_name": "scene_34",
+      "description": "Create a simple acknowledgment animation that displays appreciation for Patreon supporters. Show ani..."
+    },
+    "2": {
+      "reason": "Minimal construct method (3 lines)",
+      "scene_name": "scene_2",
+      "description": "Show how to introduce implicit functions by comparing circles and ellipses to explicit functions. Cr..."
+    },
+    "4": {
+      "reason": "Minimal construct method (1 lines)",
+      "scene_name": "scene_4",
+      "description": "Show how to find points on a contour line using implicit functions and root-finding methods. Demonst..."
+    },
+    "5": {
+      "reason": "Minimal construct method (1 lines), Empty construct method",
+      "scene_name": "scene_5",
+      "description": "Visualize the marching squares algorithm for contour line generation using a heart-shaped function. ..."
+    },
+    "6": {
+      "reason": "Minimal construct method (2 lines)",
+      "scene_name": "scene_6",
+      "description": "Visualize the marching squares algorithm by showing all 16 possible binary cases in a grid layout. D..."
+    },
+    "9": {
+      "reason": "Minimal construct method (1 lines)",
+      "scene_name": "scene_9",
+      "description": "Create an animation that introduces the marching cubes algorithm concept by showing resolution progr..."
+    },
+    "12": {
+      "reason": "Non-educational content (acknowledgments)",
+      "scene_name": "scene_12",
+      "description": "Create an animation that displays acknowledgments to project supporters. Show a title \"Special Thank..."
+    }
+  }
+}

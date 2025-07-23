@@ -485,7 +485,7 @@ class ManimCommunityExtractor(BaseExtractor):
                         }
                         extracted_count += 1
         
-        logger.info(f"Extracted {extracted_count} samples from {self.source_id}")
+        logger.debug(f"Extracted {extracted_count} samples from {self.source_id}")
     
     def validate_sample(self, sample: Dict[str, Any]) -> bool:
         """Validate that a sample meets quality requirements."""

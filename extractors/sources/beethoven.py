@@ -20,6 +20,7 @@ class BeethovenExtractor(BaseExtractor):
     """Extract scenes from Elteoremadebeethoven's ManimCE tutorial repository"""
     
     source_id = "beethoven"
+    source_name = "Elteoremadebeethoven's ManimCE Tutorial - Basic Animation & Positioning Examples"
     
     def __init__(self, config: Dict[str, Any] = None):
         super().__init__(config)

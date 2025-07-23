@@ -65,13 +65,15 @@ Some of the sources have markdown formatting, others do not! As a final step, we
 
 
 
-
+LLM generated descriptions are and will become increasingly on manifold! As new layers get injected that convert the user prompt into a more thorough prompt for manim code, an LLM will likely be doing that restructuring. Creating fine tuning data that has an LLM written description is actually quite productive to this end.
 
 
 
 # Distribution
 Do we properly cover the distribution of lengths?
 Are we able to do any curriculum learning use the length as a super cheap-to-compute proxy for difficulty?
+
+
 
 When we get long form videos, are we trying to split them into self contained scenes? If so, there is the issue of the scenes being interdependent, which is actually not good for the dataset, since we are teaching the model to write code that references variables that are not there. 
 
