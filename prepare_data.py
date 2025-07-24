@@ -4,6 +4,7 @@ Data preparation pipeline for Manim dataset.
 Simple and focused on extraction and video rendering.
 """
 
+import hashlib
 import json
 import logging
 import re
@@ -86,8 +87,12 @@ def deduplicate_samples(samples: List[Dict[str, Any]]) -> Tuple[List[Dict[str, A
                 duplicate_counts[source] += 1
     
     # Sort deduplicated samples to ensure deterministic output
-    # Use code prefix as tiebreaker for fully deterministic results
-    deduplicated.sort(key=lambda s: (s['source'], s.get('description', ''), s.get('code', '')[:100]))
+    # Use hash of normalized code as tiebreaker for fully deterministic results
+    deduplicated.sort(key=lambda s: (
+        s['source'], 
+        s.get('description', ''), 
+        hashlib.sha256(normalize_code(s.get('code', '')).encode()).hexdigest()
+    ))
     
     return deduplicated, duplicate_counts
 
@@ -172,7 +177,8 @@ def prepare_dataset(
     timeout: int = 30,
     render_videos: bool = False,
     no_cached_videos: bool = False,
-    no_deduplication: bool = False
+    no_deduplication: bool = False,
+    prefer_cleaned_data: bool = False
 ):
     """
     Dataset preparation pipeline.
@@ -184,6 +190,7 @@ def prepare_dataset(
         render_videos: Whether to render all samples as videos
         no_cached_videos: Force re-render existing videos
         no_deduplication: Disable deduplication of samples
+        prefer_cleaned_data: Use pre-cleaned parquet files from Kaggle when available
     """
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
@@ -214,6 +221,10 @@ def prepare_dataset(
         try:
             # Get extractor
             extractor = registry.get_extractor(source_id)
+            
+            # Set prefer_cleaned_data flag if extractor supports it
+            if hasattr(extractor, 'prefer_cleaned_data'):
+                extractor.prefer_cleaned_data = prefer_cleaned_data
             
             # Extract samples
             samples = []
@@ -493,6 +504,7 @@ def main():
     parser.add_argument("--render-videos", action="store_true", help="Render all samples as videos")
     parser.add_argument("--no-cached-videos", action="store_true", help="Force re-render existing videos")
     parser.add_argument("--no-deduplication", action="store_true", help="Disable deduplication of samples with identical code")
+    parser.add_argument("--use-cleaned-data", action="store_true", help="Use pre-cleaned parquet files from Kaggle when available")
     
     args = parser.parse_args()
     
@@ -523,7 +535,8 @@ def main():
         timeout=args.timeout,
         render_videos=args.render_videos,
         no_cached_videos=args.no_cached_videos,
-        no_deduplication=args.no_deduplication
+        no_deduplication=args.no_deduplication,
+        prefer_cleaned_data=args.prefer_cleaned_data
     )
 
 

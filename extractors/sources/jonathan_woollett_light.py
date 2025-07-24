@@ -53,11 +53,20 @@ class JonathanWoollettLightExtractor(BaseExtractor):
             return None
     
     def _extract_functions(self, content: str) -> Dict[str, str]:
-        """Extract function definitions from Python code"""
+        """Extract function definitions and module-level constants from Python code"""
         functions = {}
         try:
-            # Use regex to find function definitions
-            func_pattern = r'^(def\s+\w+\s*\([^)]*\):.*?)(?=^def\s+|\Z)'
+            # First, extract module-level constants (simple assignments)
+            # Match lines like "CONSTANT = value" at the beginning of lines
+            const_pattern = r'^([A-Z_][A-Z0-9_]*)\s*=\s*([^\n]+)$'
+            const_matches = re.findall(const_pattern, content, re.MULTILINE)
+            
+            for const_name, const_value in const_matches:
+                # Store constants as simple assignment statements
+                functions[const_name] = f"{const_name} = {const_value}"
+            
+            # Then extract function definitions (handle multi-line signatures)
+            func_pattern = r'^(def\s+\w+\s*\((?:[^()]*|\([^()]*\))*\):.*?)(?=^def\s+|\Z)'
             matches = re.findall(func_pattern, content, re.MULTILINE | re.DOTALL)
             
             for func_code in matches:

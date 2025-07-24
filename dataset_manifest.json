@@ -1,0 +1,13 @@
+{
+  "kaggle_dataset": "timholdsworth/manim-bench-cleaned",
+  "sources": {
+    "manimbench": "manimbench.parquet",
+    "reducible": "reducible.parquet",
+    "dan4life": "dan4life.parquet",
+    "_beethoven": "_beethoven.parquet",
+    "manim_repo_wordpress": "manim_repo_wordpress.parquet",
+    "bespoke_labs": "bespoke_labs.parquet",
+    "manim_community": "manim_community.parquet",
+    "manim_ce_docs": "manim_ce_docs.parquet"
+  }
+}

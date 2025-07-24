@@ -282,7 +282,11 @@ if test_mode:
         print(f"NEW: {updated_descriptions[i]}")
 
 # Clean up
-os.unlink('/tmp/description_prompt_template.txt')
+if os.path.exists('/tmp/description_prompt_template.txt'):
+    try:
+        os.unlink('/tmp/description_prompt_template.txt')
+    except Exception as e:
+        pass  # Ignore cleanup errors
 EOF
 
 # Run the Python script
