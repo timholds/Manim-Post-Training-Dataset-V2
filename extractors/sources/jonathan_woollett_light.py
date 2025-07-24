@@ -183,6 +183,7 @@ class JonathanWoollettLightExtractor(BaseExtractor):
                 yield {
                     'source_id': self.source_id,
                     'scene_name': scene_name,
+                    'description': description,
                     'code': processed_content,
                     'metadata': metadata
                 }

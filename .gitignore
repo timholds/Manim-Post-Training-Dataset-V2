@@ -25,6 +25,8 @@ wandb/
 # Virtual environments
 manim-env/
 
+code_samples/
+
 # Data directories
 data/
 data_formatted/

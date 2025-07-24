@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 class ManimRepositoryExtractor(BaseExtractor):
     """Extractor for The Manim Repository WordPress blog."""
     
-    source_id = "manim_repository"
+    source_id = "manim_repo_wordpress"
     source_name = "The Manim Repository Blog"
     priority = 3  # Medium priority - curated examples but limited quantity
     
@@ -274,23 +274,67 @@ class ManimRepositoryExtractor(BaseExtractor):
         # Ensure consistent indentation (convert tabs to spaces)
         code = code.replace('\t', '    ')
         
+        # Fix version compatibility issues
+        if 'ParametricSurface' in code:
+            # In newer ManimCE, ParametricSurface is now just Surface
+            code = code.replace('ParametricSurface', 'Surface')
+            
+        # Fix incomplete imports - if code uses 3D objects but doesn't import them
+        if 'from manim import *' in code:
+            # Already has wildcard import, should be fine
+            pass
+        elif 'from manim import' in code and 'ThreeDScene' in code:
+            # Has specific imports but might be missing 3D imports
+            # Check for 3D objects that might not be imported
+            threed_objects = ['Surface', 'ThreeDScene']
+            for obj in threed_objects:
+                if obj in code and f'import {obj}' not in code:
+                    # Add to imports
+                    code = code.replace('from manim import', f'from manim import {obj},', 1)
+        
         return code.strip()
     
     def _is_manimce_code(self, code: str) -> bool:
-        """Check if code is ManimCE (not ManimGL)."""
+        """Check if code is ManimCE (not ManimGL) and has no external dependencies."""
         # Must have ManimCE import
         if 'from manim import' not in code:
             return False
             
-        # Must NOT have ManimGL import (unless it's commented out)
         lines = code.split('\n')
         for line in lines:
             # Skip commented lines
             if line.strip().startswith('#'):
                 continue
+                
             # Reject if we find an active manimlib import
             if 'from manimlib import' in line:
                 return False
+                
+            # Reject if it has external module dependencies
+            # (other than standard library and manim)
+            if line.strip().startswith('from ') or line.strip().startswith('import '):
+                # Extract module name
+                import_line = line.strip()
+                
+                # Skip standard imports
+                if any(std in import_line for std in [
+                    'from manim import', 'import manim',
+                    'import numpy', 'from numpy', 
+                    'import math', 'from math',
+                    'import random', 'from random',
+                    'import itertools', 'from itertools',
+                    'import functools', 'from functools',
+                    'import collections', 'from collections',
+                    '__future__'
+                ]):
+                    continue
+                    
+                # Reject custom module imports
+                if ('from functions import' in import_line or
+                    'from mobjects import' in import_line or
+                    'from utils import' in import_line or
+                    'from helpers import' in import_line):
+                    return False
                 
         return True
     

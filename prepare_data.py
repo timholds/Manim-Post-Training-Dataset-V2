@@ -21,9 +21,10 @@ from extractors.utils import normalize_code
 SOURCE_PRIORITIES = {
     'manimbench': 1,        # Reviewed descriptions + clean code
     'reducible': 2,         # Professional educational content
-    'dan4life': 2,          # High-quality algorithm visualizations
+    'dan4life': 3,          # High-quality algorithm visualizations (specific puzzles)
     'beethoven': 3,         # Tutorial series with descriptions
-    'manim_repository': 3,  # Curated blog examples
+    'manim_repo_wordpress': 3,  # Curated blog examples
+    'jonathan_woollett_light': 4,  # Mathematical visualizations
     'bespoke_labs': 4,      # Academic but potentially synthetic
     'manim_community': 4,   # Basic examples and tests
     'manim_ce_docs': 5,     # Minimal documentation examples
@@ -72,6 +73,11 @@ def deduplicate_samples(samples: List[Dict[str, Any]]) -> Tuple[List[Dict[str, A
             winner = sorted_samples[0]
             deduplicated.append(winner)
             
+            # Log duplicate detection for transparency
+            if len(sample_group) > 1:
+                sources_involved = [s['source'] for s in sample_group]
+                logger.debug(f"Duplicate found across sources: {sources_involved}, keeping {winner['source']}")
+            
             # Count duplicates for other sources
             for sample in sorted_samples[1:]:
                 source = sample['source']
@@ -80,7 +86,8 @@ def deduplicate_samples(samples: List[Dict[str, Any]]) -> Tuple[List[Dict[str, A
                 duplicate_counts[source] += 1
     
     # Sort deduplicated samples to ensure deterministic output
-    deduplicated.sort(key=lambda s: (s['source'], s.get('description', '')))
+    # Use code prefix as tiebreaker for fully deterministic results
+    deduplicated.sort(key=lambda s: (s['source'], s.get('description', ''), s.get('code', '')[:100]))
     
     return deduplicated, duplicate_counts
 
